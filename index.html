@@ -1,0 +1,1354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestor de Agenda Dinámica</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .slot-card { transition: all 0.2s ease; }
+    .slot-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .section-divider { @apply col-span-1 md:col-span-2 border-b border-slate-200 text-xs font-bold text-indigo-600 uppercase tracking-wider pt-2 pb-1 mt-2; }
+    .drag-over { @apply bg-indigo-50 border-indigo-400 text-indigo-700 scale-105; }
+    .campo-bloqueado { @apply bg-slate-100 text-slate-500 cursor-not-allowed opacity-80; }
+  </style>
+  <script>
+    // ==========================================
+    // BLOQUEO DE INSPECCIÓN Y CLIC DERECHO
+    // ==========================================
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      // Bloquear F12
+      if (e.key === 'F12' || e.keyCode === 123) {
+        e.preventDefault();
+        return false;
+      }
+      // Bloquear combinaciones Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
+      if (e.ctrlKey) {
+        if (e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) {
+          e.preventDefault();
+          return false;
+        }
+        if (e.key.toLowerCase() === 'u') {
+          e.preventDefault();
+          return false;
+        }
+      }
+    });
+  </script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 min-h-screen">
+
+  <div id="modalLogin" class="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-[100]">
+    <div class="bg-white p-8 rounded-xl shadow-xl max-w-sm w-full text-center">
+      <h2 class="text-2xl font-black mb-2 text-slate-800">Acceso al Sistema</h2>
+      <p class="text-sm text-slate-500 mb-6">Ingresa tu PIN de seguridad para continuar.</p>
+      <input type="password" id="inputPin" onkeyup="if(event.key === 'Enter') verificarPin()" placeholder="••••" class="w-full border border-slate-300 rounded-lg p-3 text-center text-3xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6 font-mono">
+      <button id="btnLogin" onclick="verificarPin()" type="button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+        Ingresar
+      </button>
+      <p id="msgErrorPin" class="text-rose-600 text-xs font-bold mt-4 hidden"></p>
+    </div>
+  </div>
+
+  <div id="appContenedor" class="hidden">
+    <header class="bg-indigo-700 text-white shadow-md px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight">Agenda Instaladores</h1>
+        <p class="text-xs text-indigo-200 mt-0.5 flex items-center gap-2">
+          Agenda de Cuadrillas 
+          <span id="badgeRol" class="bg-white/20 text-white text-[10px] tracking-wider px-2 py-0.5 rounded font-bold uppercase border border-white/30"></span>
+        </p>
+      </div>
+      
+      <div class="flex items-center gap-3">
+        <button id="btnSincronizar" onclick="sincronizarDatos()" class="bg-black/30 hover:bg-black/40 text-white font-medium text-sm py-2 px-3 rounded-lg transition-colors border border-white/10 flex items-center gap-2">
+          🔄 Sincronizar
+        </button>
+        <button onclick="cerrarSesion()" class="bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm py-2 px-3 rounded-lg transition-colors shadow-sm border border-rose-800">
+          Salir
+        </button>
+      </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 lg:p-6">
+      <div class="bg-white rounded-xl shadow-xs border border-slate-200 p-4 mb-6 flex flex-wrap gap-4 items-center justify-between">
+        <div class="flex items-center gap-4 flex-wrap w-full md:w-auto">
+          <div class="flex items-center gap-2">
+            <label for="filtroFecha" class="font-semibold text-sm text-slate-700">Filtrar Fecha:</label>
+            <input type="date" id="filtroFecha" onchange="cambioDeFechaFiltro()" class="border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-800">
+          </div>
+          
+          <div id="panelAdmin" class="flex items-center gap-2 pl-4 border-l border-slate-200 hidden">
+            <input type="text" id="inputNuevaCuadrilla" placeholder="Nombre nueva cuadrilla..." class="border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
+            <button onclick="agregarCuadrillaFecha()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-2 px-3 rounded-lg transition-colors shadow-sm">
+              ➕ Añadir
+            </button>
+            <button onclick="abrirVistaGeneralAdmin()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm py-2 px-3 rounded-lg transition-colors shadow-sm ml-2 flex items-center gap-1">
+              📊 Vista General
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="contenedorDias" class="space-y-8"></div>
+    </main>
+  </div>
+
+  <div id="modalRegistro" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="bg-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10">
+        <div>
+          <span class="text-[10px] uppercase font-black tracking-wider text-indigo-600">Formulario de Registro</span>
+          <h3 id="modalTitulo" class="font-black text-lg text-slate-800">Registrar en Agenda</h3>
+        </div>
+        <button type="button" onclick="cerrarModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold p-1 leading-none">×</button>
+      </div>
+      
+      <form id="formularioAgenda" onsubmit="enviarDatos(event)" class="p-6 space-y-4">
+        <input type="hidden" id="form_fecha">
+        <input type="hidden" id="form_cuadrilla">
+        <input type="hidden" id="form_espacio">
+        <input type="hidden" id="form_rownum">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="section-divider">Datos Operativos</div>
+
+          <div>
+            <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
+              <span>Técnico Asignado / Cuadrilla</span>
+              <button type="button" onclick="gestionarLista('config_lista_tecnicos', 'Técnico Asignado')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+            </label>
+            <select id="form_tecnico" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+          
+          <div>
+            <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
+              <span>Motivo</span>
+              <button type="button" onclick="gestionarLista('config_lista_motivos', 'Motivo')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+            </label>
+            <select id="form_motivo" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required></select>
+          </div>
+
+          <div>
+             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
+              <span>Horario</span>
+              <button type="button" onclick="gestionarLista('config_lista_horarios', 'Horarios')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+             </label>
+            <select id="form_horario" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required></select>
+          </div>
+
+          <div>
+             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
+              <span>Agente que Agendó</span>
+              <button type="button" onclick="gestionarLista('config_lista_agentes', 'Agentes')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+            </label>
+            <select id="form_agente" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required></select>
+          </div>
+
+          <div class="section-divider">Información del Cliente</div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-slate-600 mb-1">Nombre del Cliente</label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input type="text" id="form_nombredelcliente" placeholder="Nombre completo del cliente" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+              <input type="url" id="form_link_cliente" placeholder="Enlace personalizado (URL)" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Teléfono</label>
+            <input type="tel" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" id="form_telefono" placeholder="Ej: 6141234567" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">IP</label>
+            <input type="text" id="form_ip" placeholder="Ej: 192.168.1.1 (Opcional)" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-slate-600 mb-1">Calle y Número</label>
+            <input type="text" id="form_calleynumero" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+          </div>
+
+          <div>
+            <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
+              <span>Colonia ó Fraccionamiento</span>
+              <button type="button" onclick="gestionarLista('config_lista_colonias', 'Colonias')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+            </label>
+            <select id="form_coloniaofracc" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required></select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Coordenadas o entre calles</label>
+            <input type="text" id="form_coordenadasoentrecalles" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <div class="section-divider">Validaciones y Comentarios</div>
+          
+          <div>
+            <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
+              <span>Bienvenida</span>
+              <button type="button" onclick="gestionarLista('config_lista_bienvenida', 'Opciones de Bienvenida')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+            </label>
+            <select id="form_bienvenida" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+
+          <div>
+             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
+              <span>¿Por qué medio nos conoció?</span>
+              <button type="button" onclick="gestionarLista('config_lista_medios', 'Medios de Contacto')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+            </label>
+            <select id="form_pormediosediocuentadenosotros" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Otros ¿Cuál?</label>
+            <input type="text" id="form_otroscual" placeholder="Especificar otro medio" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <div>
+            <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
+               <span>Plan Contratado</span>
+              <button type="button" onclick="gestionarLista('config_lista_planes', 'Planes')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+            </label>
+            <select id="form_plan" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+          
+          <div>
+            <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
+              <span>Confirmada</span>
+              <button type="button" onclick="gestionarLista('config_lista_confirmada', 'Opciones de Confirmada')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+            </label>
+            <select id="form_confirmada" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+
+          <div>
+             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
+              <span>Se realizó</span>
+              <button type="button" onclick="gestionarLista('config_lista_serealizo', 'Opciones de Se realizó')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+             </label>
+            <select id="form_serealizo" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+
+          <div>
+             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
+              <span>Ya fue cliente</span>
+              <button type="button" onclick="gestionarLista('config_lista_yafuecliente', 'Opciones de Cliente Histórico')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+            </label>
+             <select id="form_yafuecliente" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+          </div>
+          
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Monto ($)</label>
+            <input type="text" id="form_monto" placeholder="Ej: 1500.50" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-slate-600 mb-1">Comentarios Generales</label>
+            <textarea id="form_comentarios" rows="2" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-slate-600 mb-1">Comentarios CAT</label>
+            <textarea id="form_comentarioscat" rows="2" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+          
+          <div class="md:col-span-2">
+            <label class="block text-xs font-bold text-slate-600 mb-1">Comentarios del Técnico</label>
+            <textarea id="form_comentariosdeltecnico" rows="2" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+          </div>
+          
+          <div class="hidden">
+              <input type="text" id="form_reportetecnico">
+          </div>
+
+          <div class="md:col-span-2 mt-4 flex gap-3 justify-end border-t border-slate-200 pt-4">
+            <button type="button" id="btnEliminarRegistro" onclick="eliminarRegistroBD()" class="hidden bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
+              🗑️ Eliminar Registro
+            </button>
+            <button type="button" onclick="cerrarModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-6 rounded-lg transition-colors">
+              Cancelar
+            </button>
+            <button type="submit" id="btnGuardarRegistro" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-md">
+              Guardar Cambios
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="vistaAdminFiltros" class="hidden fixed inset-0 bg-slate-50 z-[110] overflow-auto flex flex-col">
+    <div class="bg-slate-800 text-white px-6 py-4 flex justify-between items-center shadow-md">
+      <div>
+         <h2 class="text-xl font-bold">Base de Datos General (Solo Lectura)</h2>
+        <p class="text-xs text-slate-300 mt-1">Busca por palabra exacta o establece rangos de fechas.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="btnSincronizarAdminFiltros" onclick="sincronizarVistaAdmin()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
+          🔄 Sincronizar
+        </button>
+        <button onclick="cerrarVistaGeneralAdmin()" class="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+          Volver a la Agenda
+        </button>
+      </div>
+    </div>
+    <div class="flex-1 p-6 overflow-auto">
+      <div id="cargandoTablaAdmin" class="text-center text-slate-500 py-10 font-bold">Recuperando registros desde Google Sheets...</div>
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-auto">
+        <table class="min-w-full text-left text-xs border-collapse hidden" id="tablaAdminCompleta">
+          <thead class="bg-slate-100 text-slate-700 sticky top-0 shadow-sm" id="tablaAdminHeader"></thead>
+          <tbody id="tablaAdminBody" class="divide-y divide-slate-200"></tbody>
+        </table>
+      </div>
+      <div class="mt-4 text-right text-xs font-semibold text-slate-500" id="totalFilasMostradas"></div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // ADAPTADOR PARA GITHUB PAGES / HOSTING EXTERNO
+    // ==========================================
+    const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbx6XKT1zgsYKLe9wOyzM9blXnuU3gnJBEbmznvdbueYYgIqR04WUhhoBm32ClmvqiHv/exec";
+
+    if (typeof google === 'undefined') {
+      window.google = {
+        script: {
+          run: (function() {
+            let _onSuccess = null;
+            let _onFailure = null;
+
+            function callBackend(action, params) {
+              const successCb = _onSuccess;
+              const failureCb = _onFailure;
+              _onSuccess = null;
+              _onFailure = null;
+
+              fetch(URL_WEB_APP, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: action, data: params })
+              })
+              .then(res => res.json())
+              .then(resData => {
+                if (successCb) successCb(resData);
+              })
+              .catch(err => {
+                if (failureCb) failureCb(err);
+              });
+            }
+
+            return {
+              withSuccessHandler: function(cb) { _onSuccess = cb; return this; },
+              withFailureHandler: function(cb) { _onFailure = cb; return this; },
+              validarAutenticacion: function(pin) { callBackend('validarAutenticacion', { pin: pin }); },
+              obtenerDatosAgenda: function() { callBackend('obtenerDatosAgenda', {}); },
+              guardarRegistroAgenda: function(datos) { callBackend('guardarRegistroAgenda', { datos: datos }); },
+              eliminarRegistroAgenda: function(rowNum, usuario) { callBackend('eliminarRegistroAgenda', { rowNum: rowNum, usuario: usuario }); },
+              renombrarCuadrillaBD: function(nombreViejo, nombreNuevo) { callBackend('renombrarCuadrillaBD', { nombreViejo: nombreViejo, nombreNuevo: nombreNuevo }); },
+              obtenerTodoContenidoBaseDatos: function() { callBackend('obtenerTodoContenidoBaseDatos', {}); }
+            };
+          })()
+        }
+      };
+    }
+
+    // ==========================================
+    // ALMACENAMIENTO Y LÓGICA ORIGINAL
+    // ==========================================
+    const safeStorage = {
+        mem: {},
+        getItem: function(key) { try { return localStorage.getItem(key); } catch(e) { return this.mem[key] || null; } },
+        setItem: function(key, val) { try { localStorage.setItem(key, val); } catch(e) { this.mem[key] = val.toString(); } },
+        removeItem: function(key) { try { localStorage.removeItem(key); } catch(e) { delete this.mem[key]; } }
+    };
+    
+    const safeSession = {
+        mem: {},
+        getItem: function(key) { try { return sessionStorage.getItem(key); } catch(e) { return this.mem[key] || null; } },
+        setItem: function(key, val) { try { sessionStorage.setItem(key, val); } catch(e) { this.mem[key] = val.toString(); } },
+        removeItem: function(key) { try { sessionStorage.removeItem(key); } catch(e) { delete this.mem[key]; } }
+    };
+
+    const tecnicosPorDefecto = ["Cuadrilla 1", "Cuadrilla 2", "Técnico Alfa"];
+    const motivosPorDefecto = ["Instalación", "Soporte", "Cambio de Domicilio", "Desinstalación"];
+    const horariosPorDefecto = ["08:00 - 10:00", "10:00 - 12:00", "12:00 - 14:00", "Disponibilidad"];
+    const agentesPorDefecto = ["Agente Juan", "Agente María", "Call Center"];
+    const coloniasPorDefecto = ["Centro", "Revolución"];
+    const planesPorDefecto = ["Básico", "Intermedio", "Avanzado"];
+    const confirmadaPorDefecto = ["No", "Sí"];
+    const serealizoPorDefecto = ["Pendiente", "Sí", "No"];
+    const yafueclientePorDefecto = ["No", "Sí"];
+    const bienvenidaPorDefecto = ["Sí", "No"];
+    const mediosPorDefecto = ["Facebook", "Recomendación", "Folleto", "Página Web", "Otros"];
+    
+    const camposPermitidosTecnico = [
+      'form_comentariosdeltecnico', 'form_monto', 'form_serealizo', 
+      'form_plan', 'form_coordenadasoentrecalles', 'form_ip'
+    ];
+    
+    let baseDatosGoogle = [];
+    let espaciosPorFecha = {};
+    let rolUsuario = null;
+
+    function normalizarTecnico(texto) {
+        if (!texto) return "";
+        return texto.toString().trim().toLowerCase().split(/\s+/).map(function(w){
+            return w.charAt(0).toUpperCase() + w.slice(1);
+        }).join(' ');
+    }
+
+    window.onload = function() {
+      try {
+          const hoy = new Date().toISOString().split('T')[0];
+          document.getElementById('filtroFecha').value = hoy;
+          
+          if(!safeStorage.getItem('config_lista_tecnicos')) safeStorage.setItem('config_lista_tecnicos', JSON.stringify(tecnicosPorDefecto));
+          if(!safeStorage.getItem('config_lista_motivos')) safeStorage.setItem('config_lista_motivos', JSON.stringify(motivosPorDefecto));
+          if(!safeStorage.getItem('config_lista_horarios')) safeStorage.setItem('config_lista_horarios', JSON.stringify(horariosPorDefecto));
+          if(!safeStorage.getItem('config_lista_agentes')) safeStorage.setItem('config_lista_agentes', JSON.stringify(agentesPorDefecto));
+          if(!safeStorage.getItem('config_lista_colonias')) safeStorage.setItem('config_lista_colonias', JSON.stringify(coloniasPorDefecto));
+          if(!safeStorage.getItem('config_lista_planes')) safeStorage.setItem('config_lista_planes', JSON.stringify(planesPorDefecto));
+          if(!safeStorage.getItem('config_lista_confirmada')) safeStorage.setItem('config_lista_confirmada', JSON.stringify(confirmadaPorDefecto));
+          if(!safeStorage.getItem('config_lista_serealizo')) safeStorage.setItem('config_lista_serealizo', JSON.stringify(serealizoPorDefecto));
+          if(!safeStorage.getItem('config_lista_yafuecliente')) safeStorage.setItem('config_lista_yafuecliente', JSON.stringify(yafueclientePorDefecto));
+          if(!safeStorage.getItem('config_lista_bienvenida')) safeStorage.setItem('config_lista_bienvenida', JSON.stringify(bienvenidaPorDefecto));
+          if(!safeStorage.getItem('config_lista_medios')) safeStorage.setItem('config_lista_medios', JSON.stringify(mediosPorDefecto));
+          
+          let cached = safeStorage.getItem('espacios_por_fecha_v4');
+          if(cached) espaciosPorFecha = JSON.parse(cached);
+          poblarSelects();
+
+          const sesionGuardada = safeSession.getItem('sesion_activa');
+          if (sesionGuardada) {
+            iniciarAppConRol(sesionGuardada);
+          }
+      } catch (errorFalla) {
+          const m = document.getElementById('msgErrorPin');
+          if (m) {
+            m.innerText = "Error inicializando la app: " + errorFalla.message;
+            m.classList.remove('hidden');
+          }
+      }
+    };
+
+    function verificarPin() {
+      try {
+          const pinInput = document.getElementById('inputPin');
+          const pin = pinInput.value.trim();
+          const btn = document.getElementById('btnLogin');
+          const msgError = document.getElementById('msgErrorPin');
+          
+          if(!pin) return;
+          
+          btn.innerHTML = "⏳ Verificando...";
+          btn.disabled = true;
+          msgError.classList.add('hidden');
+          
+          if (typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run
+              .withSuccessHandler(function(res) {
+                if (res.status === 'success') {
+                  safeSession.setItem('sesion_activa', res.role);
+                  if (res.nombre) safeSession.setItem('nombre_usuario', res.nombre);
+                  iniciarAppConRol(res.role);
+                } else {
+                  msgError.innerText = res.message;
+                  msgError.classList.remove('hidden');
+                  btn.innerHTML = "Ingresar";
+                  btn.disabled = false;
+                }
+              })
+              .withFailureHandler(function(err) {
+                msgError.innerText = "Error servidor: " + err;
+                msgError.classList.remove('hidden');
+                btn.innerHTML = "Ingresar";
+                btn.disabled = false;
+              })
+              .validarAutenticacion(pin);
+          } else {
+            if(pin === '1234') iniciarAppConRol('admin');
+            else if(pin === '5678') iniciarAppConRol('tecnico');
+            else {
+              msgError.innerText = "PIN Incorrecto";
+              msgError.classList.remove('hidden');
+              btn.innerHTML = "Ingresar";
+              btn.disabled = false;
+            }
+          }
+      } catch (e) {
+          const err = document.getElementById('msgErrorPin');
+          if (err) {
+              err.innerText = "Error en el navegador: " + e.message;
+              err.classList.remove('hidden');
+          }
+          document.getElementById('btnLogin').innerHTML = "Ingresar";
+          document.getElementById('btnLogin').disabled = false;
+      }
+    }
+
+    function iniciarAppConRol(rol) {
+      rolUsuario = rol;
+      document.getElementById('modalLogin').classList.add('hidden');
+      document.getElementById('appContenedor').classList.remove('hidden');
+      document.getElementById('badgeRol').innerText = rol === 'admin' ? 'Administrador' : 'Técnico';
+      
+      if (rol === 'tecnico') {
+        document.getElementById('panelAdmin').classList.add('hidden');
+        document.querySelectorAll('.admin-only').forEach(function(el) { el.classList.add('hidden') });
+      } else {
+        document.getElementById('panelAdmin').classList.remove('hidden');
+        document.querySelectorAll('.admin-only').forEach(function(el) { el.classList.remove('hidden') });
+      }
+      
+      sincronizarDatos();
+    }
+
+    function cerrarSesion() { 
+      safeSession.removeItem('sesion_activa'); 
+      safeSession.removeItem('nombre_usuario');
+      rolUsuario = null;
+      document.getElementById('inputPin').value = '';
+      document.getElementById('appContenedor').classList.add('hidden');
+      document.getElementById('modalLogin').classList.remove('hidden');
+      
+      const btn = document.getElementById('btnLogin');
+      btn.innerHTML = "Ingresar";
+      btn.disabled = false;
+    }
+
+    function sincronizarDatos() {
+      const btn = document.getElementById('btnSincronizar');
+      if(btn) btn.innerHTML = "⏳ Sincronizando...";
+      
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(datos) {
+            baseDatosGoogle = datos || [];
+            baseDatosGoogle.forEach(function(c) {
+                if (c.tecnico) c.tecnico = normalizarTecnico(c.tecnico);
+            });
+            renderizarAgenda();
+            if(btn) btn.innerHTML = "🔄 Sincronizar";
+          })
+          .withFailureHandler(function(err) {
+            alert("Error al sincronizar datos: " + err);
+            if(btn) btn.innerHTML = "🔄 Sincronizar";
+          })
+          .obtenerDatosAgenda();
+      }
+    }
+
+    function renderizarAgenda() {
+      const fechaActual = document.getElementById('filtroFecha').value;
+      if(!fechaActual) return;
+      
+      const contenedor = document.getElementById('contenedorDias');
+      contenedor.innerHTML = '';
+      
+      window.cuadrillasManuales = window.cuadrillasManuales || {};
+      window.cuadrillasOcultas = window.cuadrillasOcultas || {};
+      let manualesHoy = window.cuadrillasManuales[fechaActual] || {};
+      let ocultasHoy = window.cuadrillasOcultas[fechaActual] || {};
+
+      let cuadrillasHoy = [];
+      baseDatosGoogle.forEach(function(c) {
+          if (c.fecha === fechaActual && c.tecnico && cuadrillasHoy.indexOf(c.tecnico) === -1) {
+              cuadrillasHoy.push(c.tecnico);
+          }
+      });
+      
+      cuadrillasHoy.forEach(function(tec) {
+          let citasTec = baseDatosGoogle.filter(function(c) { return c.fecha === fechaActual && c.tecnico === tec; });
+
+          citasTec.sort(function(a, b) {
+              let horA = (a.horario || "").trim().toLowerCase();
+              let horB = (b.horario || "").trim().toLowerCase();
+
+              let isDispA = horA === "disponibilidad";
+              let isDispB = horB === "disponibilidad";
+
+              if (isDispA && !isDispB) return 1;
+              if (!isDispA && isDispB) return -1;
+
+              if (horA < horB) return -1;
+              if (horA > horB) return 1;
+              return 0;
+          });
+
+          citasTec.forEach(function(cita, idx) {
+              cita.espacio = idx + 1;
+          });
+      });
+      
+      let cuadrillasDelDia = {};
+      baseDatosGoogle.forEach(function(cita) {
+          if (cita.fecha === fechaActual && cita.tecnico && !ocultasHoy[cita.tecnico]) {
+              if (!cuadrillasDelDia[cita.tecnico]) {
+                  let countAnterior = (espaciosPorFecha[fechaActual] && espaciosPorFecha[fechaActual][cita.tecnico]) ? espaciosPorFecha[fechaActual][cita.tecnico] : 4;
+                  cuadrillasDelDia[cita.tecnico] = countAnterior;
+              }
+              
+              if (!cita.espacio || isNaN(parseInt(cita.espacio)) || parseInt(cita.espacio) <= 0) {
+                  let esp = 1;
+                  while (baseDatosGoogle.some(function(c) { return c.fecha === fechaActual && c.tecnico === cita.tecnico && c.espacio == esp && c.rowNum != cita.rowNum; })) {
+                       esp++;
+                  }
+                  cita.espacio = esp;
+              }
+              let espNum = parseInt(cita.espacio);
+              
+              if (espNum > cuadrillasDelDia[cita.tecnico]) {
+                  cuadrillasDelDia[cita.tecnico] = espNum;
+              }
+          }
+      });
+      
+      Object.keys(manualesHoy).forEach(function(tec) {
+          if (!cuadrillasDelDia[tec] && !ocultasHoy[tec]) {
+              cuadrillasDelDia[tec] = (espaciosPorFecha[fechaActual] && espaciosPorFecha[fechaActual][tec]) ? espaciosPorFecha[fechaActual][tec] : 4;
+          }
+      });
+      
+      espaciosPorFecha[fechaActual] = cuadrillasDelDia;
+      safeStorage.setItem('espacios_por_fecha_v4', JSON.stringify(espaciosPorFecha));
+      
+      const nombresCuadrillas = Object.keys(cuadrillasDelDia);
+      
+      if (nombresCuadrillas.length === 0) {
+          contenedor.innerHTML = '<p class="text-center text-slate-500 py-10 font-medium">No hay cuadrillas registradas para el día seleccionado.</p>';
+          return;
+      }
+      
+      const gridDiv = document.createElement('div');
+      gridDiv.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-" + Math.min(nombresCuadrillas.length, 4) + " gap-4 items-start";
+      
+      nombresCuadrillas.forEach(function(cuadrilla) {
+          const numEspacios = cuadrillasDelDia[cuadrilla];
+          const colDiv = document.createElement('div');
+          colDiv.className = 'bg-slate-100 rounded-lg p-3 shadow-inner min-h-[300px] border border-slate-200';
+          
+          let adminControles = "";
+          if (rolUsuario === 'admin') {
+              adminControles = '<div class="flex gap-1 items-center bg-indigo-700 p-1 rounded ml-2 shrink-0">' +
+                  '<button onclick="editarCuadrilla(\'' + fechaActual + '\', \'' + cuadrilla + '\')" title="Editar Nombre" class="hover:bg-indigo-500 px-1.5 rounded text-sm transition-colors">✏️</button>' +
+                  '<button onclick="eliminarCuadrilla(\'' + fechaActual + '\', \'' + cuadrilla + '\')" title="Eliminar Columna" class="hover:bg-rose-500 px-1.5 rounded text-sm transition-colors">🗑️</button>' +
+                  '<div class="w-px h-4 bg-indigo-400 mx-0.5"></div>' +
+                  '<button onclick="modificarEspacios(\'' + fechaActual + '\', \'' + cuadrilla + '\', \'sumar\')" title="Añadir espacio" class="hover:bg-indigo-500 px-1.5 rounded text-sm font-bold transition-colors">+</button>' +
+                  '<button onclick="modificarEspacios(\'' + fechaActual + '\', \'' + cuadrilla + '\', \'restar\')" title="Quitar espacio" class="hover:bg-indigo-500 px-1.5 rounded text-sm font-bold transition-colors">-</button>' +
+              '</div>';
+          }
+          
+          let btnRuta = '<button onclick="abrirRutaMapa(\'' + cuadrilla + '\', \'' + fechaActual + '\')" title="Ver ruta en mapa" class="hover:bg-indigo-500 bg-indigo-700 px-1.5 py-0.5 rounded text-xs transition-colors ml-2 shrink-0 border border-indigo-500 shadow-sm flex items-center gap-1">🗺️ Ruta</button>';
+          
+          let htmlCol = '<div class="flex justify-between items-center bg-indigo-600 text-white p-2 rounded mb-3 shadow">' +
+              '<h3 class="font-bold text-sm tracking-wide uppercase truncate w-full pl-1">' + cuadrilla + '</h3>' + btnRuta + adminControles +
+          '</div><div class="space-y-3">';
+          
+          for(let i = 1; i <= numEspacios; i++) {
+              const cita = baseDatosGoogle.find(function(c) { return c.tecnico === cuadrilla && c.fecha === fechaActual && c.espacio == i; });
+              
+              if (cita) {
+                  let motivoText = (cita.motivo || "").toLowerCase();
+                  let colorClass = "border-slate-300 bg-white hover:border-indigo-400 text-slate-800"; 
+                  
+                  if (motivoText.indexOf("instalación") > -1 || motivoText.indexOf("instalacion") > -1 || motivoText.indexOf("cambio de domicilio") > -1) {
+                      colorClass = "border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-900";
+                  } else if (motivoText.indexOf("soporte") > -1) {
+                      colorClass = "border-orange-500 bg-orange-50 hover:bg-orange-100 text-orange-900";
+                  } else if (motivoText.indexOf("desinstalación") > -1 || motivoText.indexOf("desinstalacion") > -1) {
+                      colorClass = "border-red-500 bg-red-50 hover:bg-red-100 text-red-900";
+                  }
+
+                  let urlMaps = cita.coordenadasoentrecalles ? "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(cita.coordenadasoentrecalles) : "#";
+                  let coordsHtml = cita.coordenadasoentrecalles ? '<a href="' + urlMaps + '" target="_blank" onclick="event.stopPropagation()" class="text-indigo-600 hover:text-indigo-800 underline text-[11px] font-bold truncate block mt-1" title="Abrir en Google Maps">📍 ' + cita.coordenadasoentrecalles + '</a>' : '';
+                  let realLink = cita.linkCliente ? (cita.linkCliente.indexOf('http') === 0 ? cita.linkCliente : 'https://' + cita.linkCliente) : "#";
+                  let linkHtml = cita.linkCliente ? '<a href="' + realLink + '" target="_blank" onclick="event.stopPropagation()" class="text-indigo-600 hover:text-indigo-800 underline text-[11px] font-bold break-all truncate block mt-1">🔗 Enlace del cliente</a>' : '';
+                  
+                  let extrasHtml = '';
+                  if (cita.bienvenida) extrasHtml += '<div class="text-[10.5px] text-slate-600 mt-1">👋 Bienvenida: <span class="font-bold">' + cita.bienvenida + '</span></div>';
+                  if (cita.pormediosediocuentadenosotros) {
+                      let medioTexto = cita.pormediosediocuentadenosotros;
+                      if (cita.otroscual) medioTexto += ' (' + cita.otroscual + ')';
+                      extrasHtml += '<div class="text-[10.5px] text-slate-600">📢 Medio: <span class="font-bold">' + medioTexto + '</span></div>';
+                  }
+                  
+                  htmlCol += '<div class="slot-card border-l-4 ' + colorClass + ' p-3 rounded-lg shadow-sm cursor-pointer transition-colors relative" ' +
+                           'draggable="' + (rolUsuario === 'admin') + '" ' +
+                           'ondragstart="dragStart(event, ' + cita.rowNum + ')" ' +
+                           'onclick="abrirModalEdicion(' + cita.rowNum + ')" ' +
+                           'ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, \'' + cuadrilla + '\', ' + i + ')">' +
+                           '<div class="absolute top-2 right-2 text-[10px] bg-white/50 text-slate-600 px-1.5 py-0.5 rounded font-bold">#' + i + '</div>' +
+                          '<div class="font-black text-sm pr-6">' + (cita.nombredelcliente || 'Sin Nombre') + '</div>' +
+                          '<div class="text-[11px] font-bold mt-1 opacity-90">🕒 ' + (cita.horario || '--:--') + ' | <span class="uppercase">' + (cita.motivo || '') + '</span></div>' +
+                          extrasHtml +
+                          coordsHtml + linkHtml + 
+                      '</div>';
+              } else {
+                  htmlCol += '<div class="border-2 border-dashed border-slate-300 rounded-lg p-3 text-center hover:bg-indigo-50 hover:border-indigo-300 transition-colors cursor-pointer text-slate-400 hover:text-indigo-600 min-h-[80px] flex flex-col items-center justify-center" ' +
+                           'onclick="abrirModalNuevo(\'' + cuadrilla + '\', ' + i + ')" ' +
+                           'ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, \'' + cuadrilla + '\', ' + i + ')">' +
+                          '<span class="text-xl leading-none block mb-1">+</span>' +
+                          '<span class="text-[10px] font-bold uppercase tracking-wider">Añadir al Espacio ' + i + '</span>' +
+                        '</div>';
+              }
+          }
+          htmlCol += '</div>';
+          colDiv.innerHTML = htmlCol;
+          gridDiv.appendChild(colDiv);
+      });
+      contenedor.appendChild(gridDiv);
+    }
+
+    function editarCuadrilla(fecha, nombreViejo) {
+        let nombreNuevo = prompt("Ingresa el nuevo nombre para esta cuadrilla:", nombreViejo);
+        if (!nombreNuevo) return;
+        
+        nombreNuevo = normalizarTecnico(nombreNuevo);
+        if (nombreNuevo === "" || nombreNuevo === normalizarTecnico(nombreViejo)) return;
+        
+        if (espaciosPorFecha[fecha] && espaciosPorFecha[fecha][nombreViejo]) {
+            espaciosPorFecha[fecha][nombreNuevo] = espaciosPorFecha[fecha][nombreViejo];
+            delete espaciosPorFecha[fecha][nombreViejo];
+            safeStorage.setItem('espacios_por_fecha_v4', JSON.stringify(espaciosPorFecha));
+        }
+        
+        if (window.cuadrillasManuales && window.cuadrillasManuales[fecha] && window.cuadrillasManuales[fecha][nombreViejo]) {
+            delete window.cuadrillasManuales[fecha][nombreViejo];
+            window.cuadrillasManuales[fecha][nombreNuevo] = true;
+        }
+        
+        let listaTecnicos = [];
+        try {
+            let d = safeStorage.getItem('config_lista_tecnicos');
+            if (d) listaTecnicos = JSON.parse(d);
+        } catch(e){}
+        
+        let idx = listaTecnicos.indexOf(nombreViejo);
+        if (idx !== -1) {
+            listaTecnicos[idx] = nombreNuevo;
+            safeStorage.setItem('config_lista_tecnicos', JSON.stringify(listaTecnicos));
+            poblarSelects();
+        }
+        
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+            const btn = document.getElementById('btnSincronizar');
+            if(btn) btn.innerHTML = "⏳ Actualizando...";
+            google.script.run
+              .withSuccessHandler(function() { sincronizarDatos(); })
+              .withFailureHandler(function(err) { alert("Error al renombrar: " + err); sincronizarDatos(); })
+              .renombrarCuadrillaBD(nombreViejo, nombreNuevo);
+        } else {
+            renderizarAgenda();
+        }
+    }
+
+    function eliminarCuadrilla(fecha, cuadrilla) {
+        if (!confirm('¿Estás seguro de ocultar la columna de "' + cuadrilla + '" de la vista de hoy?\n\nNota: Los registros internos no se borrarán de Google Sheets, solo desaparecerá la columna de la agenda visual de forma temporal.')) return;
+        
+        window.cuadrillasOcultas = window.cuadrillasOcultas || {};
+        if (!window.cuadrillasOcultas[fecha]) window.cuadrillasOcultas[fecha] = {};
+        window.cuadrillasOcultas[fecha][cuadrilla] = true;
+        
+        if (espaciosPorFecha[fecha] && espaciosPorFecha[fecha][cuadrilla]) {
+            delete espaciosPorFecha[fecha][cuadrilla];
+            if (window.cuadrillasManuales && window.cuadrillasManuales[fecha]) {
+                delete window.cuadrillasManuales[fecha][cuadrilla];
+            }
+            safeStorage.setItem('espacios_por_fecha_v4', JSON.stringify(espaciosPorFecha));
+        }
+        renderizarAgenda();
+    }
+
+    function asegurarOpcionSelect(idSelect, valor) {
+        if (!valor) return;
+        let select = document.getElementById(idSelect);
+        if (!select) return;
+        let existe = false;
+        
+        for (let i = 0; i < select.options.length; i++) {
+            if (select.options[i].value === valor) {
+                existe = true;
+                break;
+            }
+        }
+        if (!existe) {
+            let opt = document.createElement('option');
+            opt.value = valor;
+            opt.innerText = valor;
+            select.appendChild(opt);
+        }
+    }
+
+    function abrirModalNuevo(cuadrilla, espacio) {
+      document.getElementById('formularioAgenda').reset();
+      document.getElementById('form_rownum').value = '';
+      document.getElementById('form_fecha').value = document.getElementById('filtroFecha').value;
+      document.getElementById('form_cuadrilla').value = cuadrilla;
+      document.getElementById('form_espacio').value = espacio;
+      
+      asegurarOpcionSelect('form_tecnico', cuadrilla);
+      document.getElementById('form_tecnico').value = cuadrilla;
+      document.getElementById('modalTitulo').innerText = "Nuevo Registro - " + cuadrilla;
+      document.getElementById('btnEliminarRegistro').classList.add('hidden');
+      desbloquearCamposFormulario();
+      document.getElementById('modalRegistro').classList.remove('hidden');
+    }
+
+    function abrirModalEdicion(rowNum) {
+      const cita = baseDatosGoogle.find(function(c) { return c.rowNum == rowNum; });
+      if(!cita) return;
+      
+      document.getElementById('formularioAgenda').reset();
+      document.getElementById('form_rownum').value = cita.rowNum;
+      document.getElementById('form_fecha').value = cita.fecha;
+      document.getElementById('form_cuadrilla').value = cita.tecnico;
+      document.getElementById('form_espacio').value = cita.espacio;
+      
+      const campos = ['tecnico', 'motivo', 'horario', 'nombredelcliente', 'linkCliente', 'telefono', 'ip', 'calleynumero', 'coloniaofracc', 'coordenadasoentrecalles', 'agente', 'plan', 'confirmada', 'serealizo', 'yafuecliente', 'bienvenida', 'pormediosediocuentadenosotros', 'otroscual', 'monto', 'comentarios', 'comentarioscat', 'comentariosdeltecnico', 'reportetecnico'];
+      
+      campos.forEach(function(c) {
+         let elId = c === 'linkCliente' ? 'form_link_cliente' : 'form_' + c;
+         let el = document.getElementById(elId);
+         if(el) {
+             if (el.tagName === 'SELECT' && cita[c]) {
+                 asegurarOpcionSelect(elId, cita[c]);
+             }
+             el.value = cita[c] || "";
+         }
+      });
+      
+      document.getElementById('modalTitulo').innerText = "Editar Registro - " + cita.nombredelcliente;
+      
+      if(rolUsuario === 'admin') {
+          document.getElementById('btnEliminarRegistro').classList.remove('hidden');
+          desbloquearCamposFormulario();
+      } else {
+          document.getElementById('btnEliminarRegistro').classList.add('hidden');
+          bloquearCamposParaTecnico();
+      }
+      document.getElementById('modalRegistro').classList.remove('hidden');
+    }
+
+    function enviarDatos(ev) {
+      ev.preventDefault();
+      
+      const ipIngresada = document.getElementById('form_ip').value.trim();
+      if (ipIngresada !== "") {
+        const ipRegEx = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+        if (!ipRegEx.test(ipIngresada)) {
+          alert("⚠️ El formato de la IP es incorrecto (Ej. 192.168.1.1). Por favor, corrígelo o deja el campo vacío.");
+          return;
+        }
+      }
+
+      if (!confirm("¿Estás seguro de que deseas guardar este registro?")) {
+        return;
+      }
+
+      const rowNum = document.getElementById('form_rownum').value;
+      const fecha = document.getElementById('form_fecha').value;
+      
+      let inputTecnico = document.getElementById('form_tecnico').value;
+      let cuadrillaOriginal = document.getElementById('form_cuadrilla').value;
+      
+      if (!inputTecnico || inputTecnico.trim() === "") {
+          inputTecnico = cuadrillaOriginal;
+      }
+      const tecnico = normalizarTecnico(inputTecnico);
+      
+      let espacioFinal = document.getElementById('form_espacio').value;
+      if (tecnico !== normalizarTecnico(cuadrillaOriginal)) {
+          let esp = 1;
+          while (baseDatosGoogle.some(function(c) { return c.fecha === fecha && normalizarTecnico(c.tecnico) === tecnico && c.espacio == esp && c.rowNum != rowNum; })) {
+              esp++;
+          }
+          espacioFinal = esp;
+      }
+
+      const horario = document.getElementById('form_horario').value;
+      if (horario && horario.trim().toLowerCase() !== "disponibilidad") {
+        const horarioDuplicado = baseDatosGoogle.some(function(c) {
+          return c.fecha === fecha && c.tecnico === tecnico && c.horario && c.horario.trim().toLowerCase() === horario.trim().toLowerCase() && c.rowNum != rowNum;
+        });
+        if (horarioDuplicado) {
+          alert("⚠️ Advertencia: El horario '" + horario + "' ya está asignado a la cuadrilla '" + tecnico + "' en esta fecha. Por favor, asigne otro horario diferente.");
+          return;
+        }
+      }
+      
+      const formElements = document.getElementById('formularioAgenda').elements;
+      for(let i=0; i<formElements.length; i++) formElements[i].disabled = false;
+
+      const btn = document.getElementById('btnGuardarRegistro');
+      btn.innerHTML = "Guardando...";
+      btn.disabled = true;
+      
+      const datos = {
+         rowNum: rowNum,
+         fecha: fecha,
+         tecnico: tecnico,
+         espacio: espacioFinal,
+         motivo: document.getElementById('form_motivo').value,
+         horario: horario,
+         nombredelcliente: document.getElementById('form_nombredelcliente').value,
+         linkCliente: document.getElementById('form_link_cliente').value,
+         telefono: document.getElementById('form_telefono').value,
+         ip: document.getElementById('form_ip').value,
+         calleynumero: document.getElementById('form_calleynumero').value,
+         coloniaofracc: document.getElementById('form_coloniaofracc').value,
+         coordenadasoentrecalles: document.getElementById('form_coordenadasoentrecalles').value,
+         agente: document.getElementById('form_agente').value,
+         plan: document.getElementById('form_plan').value,
+         confirmada: document.getElementById('form_confirmada').value,
+         serealizo: document.getElementById('form_serealizo').value,
+         yafuecliente: document.getElementById('form_yafuecliente').value,
+         bienvenida: document.getElementById('form_bienvenida').value,
+         pormediosediocuentadenosotros: document.getElementById('form_pormediosediocuentadenosotros').value,
+         otroscual: document.getElementById('form_otroscual').value,
+         monto: document.getElementById('form_monto').value,
+         comentarios: document.getElementById('form_comentarios').value,
+         comentarioscat: document.getElementById('form_comentarioscat').value,
+         comentariosdeltecnico: document.getElementById('form_comentariosdeltecnico').value,
+         reportetecnico: document.getElementById('form_reportetecnico').value,
+         usuario_movimiento: safeSession.getItem('nombre_usuario') || safeSession.getItem('sesion_activa')
+      };
+      
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function(res) {
+               if(res.status === 'success') {
+                  cerrarModal();
+                  sincronizarDatos();
+               } else alert("Error: " + res.message);
+               btn.innerHTML = "Guardar Cambios";
+               btn.disabled = false;
+            })
+            .withFailureHandler(function(err) {
+               alert("Error de conexión: " + err);
+               btn.innerHTML = "Guardar Cambios";
+               btn.disabled = false;
+            })
+            .guardarRegistroAgenda(datos);
+      }
+    }
+
+    function eliminarRegistroBD() {
+       if(!confirm("¿Estás seguro de eliminar este registro?")) return;
+       const rowNum = document.getElementById('form_rownum').value;
+       if(!rowNum) return;
+       
+       const usuario = safeSession.getItem('nombre_usuario') || safeSession.getItem('sesion_activa');
+       google.script.run
+         .withSuccessHandler(function(res) {
+            if(res.status === 'success') {
+               cerrarModal();
+               sincronizarDatos();
+            } else alert("Error: " + res.message);
+         })
+         .eliminarRegistroAgenda(rowNum, usuario);
+    }
+
+    function cerrarModal() {
+      document.getElementById('modalRegistro').classList.add('hidden');
+    }
+
+    function abrirRutaMapa(cuadrilla, fecha) {
+      let citas = baseDatosGoogle.filter(function(c) {
+          return c.tecnico === cuadrilla && c.fecha === fecha && c.coordenadasoentrecalles && c.coordenadasoentrecalles.trim() !== "";
+      });
+      
+      if (citas.length === 0) {
+          alert("No hay coordenadas o ubicaciones registradas para mapear la ruta de esta cuadrilla en el día seleccionado.");
+          return;
+      }
+      
+      citas.sort(function(a, b) { return parseInt(a.espacio) - parseInt(b.espacio); });
+      let puntos = citas.map(function(c) { return encodeURIComponent(c.coordenadasoentrecalles.trim()); });
+      let urlMapsDir = "https://www.google.com/maps/dir/" + puntos.join("/");
+      window.open(urlMapsDir, '_blank');
+    }
+
+    function poblarSelects() {
+       const selects = {
+          'form_tecnico': 'config_lista_tecnicos',
+          'form_motivo': 'config_lista_motivos',
+          'form_horario': 'config_lista_horarios',
+          'form_agente': 'config_lista_agentes',
+          'form_coloniaofracc': 'config_lista_colonias',
+          'form_plan': 'config_lista_planes',
+          'form_confirmada': 'config_lista_confirmada',
+          'form_serealizo': 'config_lista_serealizo',
+          'form_yafuecliente': 'config_lista_yafuecliente',
+          'form_bienvenida': 'config_lista_bienvenida',
+          'form_pormediosediocuentadenosotros': 'config_lista_medios'
+       };
+       
+       for (let [id, confKey] of Object.entries(selects)) {
+           let el = document.getElementById(id);
+           if(!el) continue;
+           
+           let valorAnterior = el.value;
+           el.innerHTML = '<option value="">Seleccione...</option>';
+           
+           let lista = [];
+           try {
+              let stored = safeStorage.getItem(confKey);
+              if (stored) lista = JSON.parse(stored);
+           } catch(e) {}
+           
+           lista.forEach(function(item) {
+               let opt = document.createElement('option');
+               opt.value = item;
+               opt.innerText = item;
+               el.appendChild(opt);
+           });
+           
+           if(valorAnterior) {
+               el.value = valorAnterior;
+           }
+       }
+    }
+
+    function dragStart(ev, rowNum) { 
+        if(rolUsuario === 'admin') ev.dataTransfer.setData("text/plain", rowNum);
+    }
+    
+    function dragOver(ev) { 
+        if(rolUsuario === 'admin') { 
+            ev.preventDefault(); 
+            ev.currentTarget.classList.add('drag-over');
+        } 
+    }
+    
+    function dragLeave(ev) { 
+        if(rolUsuario === 'admin') ev.currentTarget.classList.remove('drag-over');
+    }
+    
+    function drop(ev, nuevaCuadrilla, nuevoEspacio) {
+      if(rolUsuario !== 'admin') return;
+      ev.preventDefault(); 
+      ev.currentTarget.classList.remove('drag-over');
+      
+      const rowNum = ev.dataTransfer.getData("text/plain");
+      if (!rowNum) return;
+      
+      const citaIndex = baseDatosGoogle.findIndex(function(c) { return c.rowNum == rowNum; });
+      if (citaIndex === -1) return;
+      
+      let cita = baseDatosGoogle[citaIndex];
+
+      const espacioOcupado = baseDatosGoogle.some(function(c) {
+          return c.fecha === cita.fecha &&
+                 c.tecnico === nuevaCuadrilla &&
+                 c.espacio == nuevoEspacio &&
+                 c.rowNum != cita.rowNum;
+      });
+      
+      if (espacioOcupado) {
+          alert("⚠️ Acción denegada: Este espacio ya está ocupado por otro cliente. Por favor, arrastra a un recuadro disponible (+).");
+          return;
+      }
+
+      if (cita.horario && cita.horario.trim().toLowerCase() !== "disponibilidad") {
+         const horarioDuplicado = baseDatosGoogle.some(function(c) {
+            return c.fecha === cita.fecha && c.tecnico === nuevaCuadrilla && c.horario && c.horario.trim().toLowerCase() === cita.horario.trim().toLowerCase() && c.rowNum != cita.rowNum;
+         });
+         
+         if (horarioDuplicado) {
+            alert("⚠️ Advertencia: El horario '" + cita.horario + "' ya está asignado a la cuadrilla '" + nuevaCuadrilla + "'. Movimiento cancelado.");
+            return;
+         }
+      }
+      
+      cita.tecnico = nuevaCuadrilla;
+      cita.espacio = nuevoEspacio;
+      cita.usuario_movimiento = safeSession.getItem('nombre_usuario') || safeSession.getItem('sesion_activa');
+      
+      renderizarAgenda();
+      
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withFailureHandler(function(err) {
+               alert("Error al mover la cita: " + err);
+               sincronizarDatos();
+            })
+            .guardarRegistroAgenda(cita);
+      }
+    }
+
+    function bloquearCamposParaTecnico() {
+      const formElements = document.getElementById('formularioAgenda').elements;
+      for(let i=0; i<formElements.length; i++) {
+          let el = formElements[i];
+          if (el.type === 'button' || el.type === 'submit' || el.type === 'hidden') continue;
+          
+          if (camposPermitidosTecnico.indexOf(el.id) === -1) {
+              el.readOnly = true;
+              if(el.tagName === 'SELECT') el.disabled = true;
+              el.classList.add('campo-bloqueado');
+          } else {
+              el.readOnly = false;
+              el.disabled = false;
+              el.classList.remove('campo-bloqueado');
+          }
+      }
+    }
+
+    function desbloquearCamposFormulario() {
+      const formElements = document.getElementById('formularioAgenda').elements;
+      for(let i=0; i<formElements.length; i++) {
+          let el = formElements[i];
+          el.readOnly = false;
+          el.disabled = false;
+          el.classList.remove('campo-bloqueado');
+      }
+    }
+
+    function cambioDeFechaFiltro() { 
+        renderizarAgenda();
+    }
+    
+    function modificarEspacios(fecha, cuadrilla, operacion) {
+      if (!espaciosPorFecha[fecha]) espaciosPorFecha[fecha] = {};
+      if (!espaciosPorFecha[fecha][cuadrilla]) espaciosPorFecha[fecha][cuadrilla] = 4;
+      
+      if (operacion === 'sumar') espaciosPorFecha[fecha][cuadrilla]++;
+      else if (operacion === 'restar' && espaciosPorFecha[fecha][cuadrilla] > 1) espaciosPorFecha[fecha][cuadrilla]--;
+      
+      safeStorage.setItem('espacios_por_fecha_v4', JSON.stringify(espaciosPorFecha));
+      renderizarAgenda();
+    }
+
+    function agregarCuadrillaFecha() {
+      const input = document.getElementById('inputNuevaCuadrilla');
+      const nueva = normalizarTecnico(input.value);
+      if(!nueva) return;
+      
+      const fechaActual = document.getElementById('filtroFecha').value;
+      if (!espaciosPorFecha[fechaActual]) espaciosPorFecha[fechaActual] = {};
+      
+      if (!espaciosPorFecha[fechaActual][nueva]) {
+          espaciosPorFecha[fechaActual][nueva] = 4;
+      }
+      
+      window.cuadrillasManuales = window.cuadrillasManuales || {};
+      if (!window.cuadrillasManuales[fechaActual]) window.cuadrillasManuales[fechaActual] = {};
+      window.cuadrillasManuales[fechaActual][nueva] = true;
+      
+      if (window.cuadrillasOcultas && window.cuadrillasOcultas[fechaActual]) {
+          delete window.cuadrillasOcultas[fechaActual][nueva];
+      }
+      
+      safeStorage.setItem('espacios_por_fecha_v4', JSON.stringify(espaciosPorFecha));
+      renderizarAgenda();
+      
+      input.value = '';
+    }
+
+    function gestionarLista(configKey, titulo) {
+       let lista = [];
+       try { 
+         let d = safeStorage.getItem(configKey);
+         if(d) lista = JSON.parse(d);
+       } catch(e){}
+       
+       let nuevaLista = prompt("Editar " + titulo + " (separa las opciones por comas):", lista.join(", "));
+       
+       if(nuevaLista !== null) {
+          let arr = nuevaLista.split(',').map(function(s) { 
+              let val = s.trim();
+              if (configKey === 'config_lista_tecnicos') val = normalizarTecnico(val);
+              return val;
+          }).filter(function(s) { return s; });
+          
+          safeStorage.setItem(configKey, JSON.stringify(arr));
+          poblarSelects();
+       }
+    }
+
+    let baseDatosCompletaAdmin = { headers: [], rows: [] };
+    
+    function abrirVistaGeneralAdmin() {
+      if (rolUsuario !== 'admin') return;
+      document.getElementById('vistaAdminFiltros').classList.remove('hidden');
+      sincronizarVistaAdmin();
+    }
+    
+    function sincronizarVistaAdmin() {
+      const btn = document.getElementById('btnSincronizarAdminFiltros');
+      if (btn) btn.innerHTML = "⏳ Sincronizando...";
+      
+      document.getElementById('cargandoTablaAdmin').classList.remove('hidden');
+      document.getElementById('tablaAdminCompleta').classList.add('hidden');
+      
+      google.script.run.withSuccessHandler(function(response) {
+        if (btn) btn.innerHTML = "🔄 Sincronizar";
+        document.getElementById('cargandoTablaAdmin').classList.add('hidden');
+        document.getElementById('tablaAdminCompleta').classList.remove('hidden');
+        
+        if (response.status === 'success') {
+          baseDatosCompletaAdmin = response;
+          construirTablaFiltrosAdmin();
+        } else {
+          alert('Fallo de conexión en lectura completa: ' + response.message);
+        }
+      }).obtenerTodoContenidoBaseDatos();
+    }
+
+    function cerrarVistaGeneralAdmin() {
+      document.getElementById('vistaAdminFiltros').classList.add('hidden');
+    }
+
+    function construirTablaFiltrosAdmin() {
+      const thead = document.getElementById('tablaAdminHeader');
+      const tbody = document.getElementById('tablaAdminBody');
+      
+      thead.innerHTML = '';
+      tbody.innerHTML = '';
+
+      if (!baseDatosCompletaAdmin.headers || baseDatosCompletaAdmin.headers.length === 0) return;
+
+      const filaTitulos = document.createElement('tr');
+      const filaFiltros = document.createElement('tr');
+      filaFiltros.className = "bg-slate-50 border-b border-slate-300";
+
+      baseDatosCompletaAdmin.headers.forEach((header, index) => {
+        const th = document.createElement('th');
+        th.className = "px-3 py-2.5 font-bold text-slate-700 whitespace-nowrap uppercase tracking-wider border-b border-slate-200 text-[11px]";
+        th.textContent = header;
+        filaTitulos.appendChild(th);
+
+        const thFiltro = document.createElement('th');
+        thFiltro.className = "px-2 py-1.5 border-b border-slate-300";
+
+        if (header.toLowerCase().includes('fecha')) {
+          const divRange = document.createElement('div');
+          divRange.className = "flex flex-col gap-1 min-w-[110px]";
+          
+          const inputInicio = document.createElement('input');
+          inputInicio.type = "date";
+          inputInicio.id = `filtro_admin_col_${index}_inicio`;
+          inputInicio.title = "Fecha Inicial";
+          inputInicio.className = "w-full border border-slate-300 rounded px-1 py-0.5 text-[10px] focus:outline-none focus:border-indigo-500";
+          inputInicio.addEventListener('input', ejecutarFiltrosAdmin);
+          
+          const inputFin = document.createElement('input');
+          inputFin.type = "date";
+          inputFin.id = `filtro_admin_col_${index}_fin`;
+          inputFin.title = "Fecha Final";
+          inputFin.className = "w-full border border-slate-300 rounded px-1 py-0.5 text-[10px] focus:outline-none focus:border-indigo-500";
+          inputFin.addEventListener('input', ejecutarFiltrosAdmin);
+
+          divRange.appendChild(inputInicio);
+          divRange.appendChild(inputFin);
+          thFiltro.appendChild(divRange);
+        } else {
+          const inputTexto = document.createElement('input');
+          inputTexto.type = "text";
+          inputTexto.id = `filtro_admin_col_${index}`;
+          inputTexto.placeholder = `Buscar...`;
+          inputTexto.className = "w-full border border-slate-300 rounded px-2 py-1 text-[11px] font-normal focus:outline-none focus:border-indigo-500";
+          inputTexto.addEventListener('input', ejecutarFiltrosAdmin);
+          thFiltro.appendChild(inputTexto);
+        }
+        filaFiltros.appendChild(thFiltro);
+      });
+
+      thead.appendChild(filaTitulos);
+      thead.appendChild(filaFiltros);
+      
+      baseDatosCompletaAdmin.rows.forEach((row, rowIndex) => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition-colors";
+        tr.id = `fila_admin_raw_${rowIndex}`;
+
+        row.forEach((cellValue) => {
+          const td = document.createElement('td');
+          td.className = "px-3 py-2 whitespace-nowrap text-slate-600 max-w-[200px] truncate text-[11px]";
+          td.textContent = cellValue || "";
+          td.title = cellValue || ""; 
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      
+      document.getElementById('totalFilasMostradas').textContent = `Registros totales: ${baseDatosCompletaAdmin.rows.length}`;
+    }
+
+    function ejecutarFiltrosAdmin() {
+      const rowsData = baseDatosCompletaAdmin.rows;
+      let contadorVisibles = 0;
+
+      const filtrosActivos = [];
+      for (let index = 0; index < baseDatosCompletaAdmin.headers.length; index++) {
+        const headerName = baseDatosCompletaAdmin.headers[index].toLowerCase();
+        
+        if (headerName.includes('fecha')) {
+          filtrosActivos[index] = {
+            tipo: 'fecha',
+            inicio: document.getElementById(`filtro_admin_col_${index}_inicio`)?.value || "",
+            fin: document.getElementById(`filtro_admin_col_${index}_fin`)?.value || ""
+          };
+        } else {
+          const inputVal = document.getElementById(`filtro_admin_col_${index}`)?.value.toLowerCase().trim() || "";
+          let regex = null;
+          if (inputVal) {
+             const queryEscapado = inputVal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+             regex = new RegExp("(^|[\\s\\W_])" + queryEscapado + "([\\s\\W_]|$)", "i");
+          }
+          filtrosActivos[index] = {
+            tipo: 'texto',
+            query: inputVal,
+            regex: regex
+          };
+        }
+      }
+
+      rowsData.forEach((row, rowIndex) => {
+        let cumpleFiltros = true;
+
+        for (let index = 0; index < row.length; index++) {
+          const filtro = filtrosActivos[index];
+          const cellValue = (row[index] || "").toString().toLowerCase().trim();
+
+          if (filtro.tipo === 'fecha') {
+            const cellDateStr = (row[index] || "").trim();
+            if (cellDateStr) {
+              if (filtro.inicio && cellDateStr < filtro.inicio) { cumpleFiltros = false; break; }
+              if (filtro.fin && cellDateStr > filtro.fin) { cumpleFiltros = false; break; }
+            } else if (filtro.inicio || filtro.fin) {
+              cumpleFiltros = false;
+              break;
+            }
+          } else {
+            if (filtro.query) {
+              const esIgualDirecto = (cellValue === filtro.query);
+              if (!esIgualDirecto && filtro.regex && !filtro.regex.test(cellValue)) {
+                cumpleFiltros = false;
+                break;
+              }
+            }
+          }
+        }
+
+        const elemFila = document.getElementById(`fila_admin_raw_${rowIndex}`);
+        if (elemFila) {
+          if (cumpleFiltros) {
+            elemFila.classList.remove('hidden');
+            contadorVisibles++;
+          } else {
+            elemFila.classList.add('hidden');
+          }
+        }
+      });
+      
+      document.getElementById('totalFilasMostradas').textContent = `Registros filtrados: ${contadorVisibles} de ${rowsData.length}`;
+    }
+  </script>
+</body>
+</html>
