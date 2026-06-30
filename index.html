@@ -45,12 +45,12 @@
   <div id="modalLogin" class="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-[100]">
     <div class="bg-white p-8 rounded-xl shadow-xl max-w-sm w-full text-center">
       <h2 class="text-2xl font-black mb-2 text-slate-800">Acceso al Sistema</h2>
-      <p class="text-sm text-slate-500 mb-6">Ingresa tu PIN de seguridad para continuar.</p>
-      <input type="password" id="inputPin" onkeyup="if(event.key === 'Enter') verificarPin()" placeholder="••••" class="w-full border border-slate-300 rounded-lg p-3 text-center text-3xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6 font-mono">
-      <button id="btnLogin" onclick="verificarPin()" type="button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+      <p class="text-sm text-slate-500 mb-6">Ingresa tu  de seguridad para continuar.</p>
+      <input type="password" id="input" onkeyup="if(event.key === 'Enter') verificar()" placeholder="••••" class="w-full border border-slate-300 rounded-lg p-3 text-center text-3xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6 font-mono">
+      <button id="btnLogin" onclick="verificar()" type="button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
         Ingresar
       </button>
-      <p id="msgErrorPin" class="text-rose-600 text-xs font-bold mt-4 hidden"></p>
+      <p id="msgError" class="text-rose-600 text-xs font-bold mt-4 hidden"></p>
     </div>
   </div>
 
@@ -345,7 +345,7 @@
             return {
               withSuccessHandler: function(cb) { _onSuccess = cb; return this; },
               withFailureHandler: function(cb) { _onFailure = cb; return this; },
-              validarAutenticacion: function(pin) { callBackend('validarAutenticacion', { pin: pin }); },
+              validarAutenticacion: function() { callBackend('validarAutenticacion', { :  }); },
               obtenerDatosAgenda: function() { callBackend('obtenerDatosAgenda', {}); },
               guardarRegistroAgenda: function(datos) { callBackend('guardarRegistroAgenda', { datos: datos }); },
               eliminarRegistroAgenda: function(rowNum, usuario) { callBackend('eliminarRegistroAgenda', { rowNum: rowNum, usuario: usuario }); },
@@ -471,9 +471,6 @@
               })
               .validarAutenticacion(pin);
           } else {
-            if(pin === '1234') iniciarAppConRol('admin');
-            else if(pin === '5678') iniciarAppConRol('tecnico');
-            else {
               msgError.innerText = "PIN Incorrecto";
               msgError.classList.remove('hidden');
               btn.innerHTML = "Ingresar";
