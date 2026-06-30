@@ -19,14 +19,11 @@
     document.addEventListener('contextmenu', function(e) {
       e.preventDefault();
     });
-
     document.addEventListener('keydown', function(e) {
-      // Bloquear F12
       if (e.key === 'F12' || e.keyCode === 123) {
         e.preventDefault();
         return false;
       }
-      // Bloquear combinaciones Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
       if (e.ctrlKey) {
         if (e.shiftKey && (e.key.toLowerCase() === 'i' || e.key.toLowerCase() === 'j')) {
           e.preventDefault();
@@ -45,12 +42,12 @@
   <div id="modalLogin" class="fixed inset-0 bg-slate-900 flex items-center justify-center p-4 z-[100]">
     <div class="bg-white p-8 rounded-xl shadow-xl max-w-sm w-full text-center">
       <h2 class="text-2xl font-black mb-2 text-slate-800">Acceso al Sistema</h2>
-      <p class="text-sm text-slate-500 mb-6">Ingresa tu  de seguridad para continuar.</p>
-      <input type="password" id="input" onkeyup="if(event.key === 'Enter') verificar()" placeholder="••••" class="w-full border border-slate-300 rounded-lg p-3 text-center text-3xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6 font-mono">
-      <button id="btnLogin" onclick="verificar()" type="button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+      <p class="text-sm text-slate-500 mb-6">Ingresa tu PIN de seguridad para continuar.</p>
+      <input type="password" id="inputPin" onkeyup="if(event.key === 'Enter') verificarPin()" placeholder="••••" class="w-full border border-slate-300 rounded-lg p-3 text-center text-3xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6 font-mono">
+      <button id="btnLogin" onclick="verificarPin()" type="button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
         Ingresar
       </button>
-      <p id="msgError" class="text-rose-600 text-xs font-bold mt-4 hidden"></p>
+      <p id="msgErrorPin" class="text-rose-600 text-xs font-bold mt-4 hidden"></p>
     </div>
   </div>
 
@@ -154,7 +151,16 @@
           <div class="md:col-span-2">
             <label class="block text-xs font-bold text-slate-600 mb-1">Nombre del Cliente</label>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <input type="text" id="form_nombredelcliente" placeholder="Nombre completo del cliente" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+              <div class="flex gap-2 items-center">
+                <input type="text" id="form_id_wisphub" placeholder="ID (Opc.)" class="w-24 border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input type="text" id="form_nombredelcliente" placeholder="Nombre completo del cliente" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+                <button type="button" onclick="buscarEnWisphub(event)" title="Buscar en WispHub" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg border border-indigo-600 transition-colors flex items-center justify-center shrink-0 shadow-sm">
+                  🔍
+                </button>
+                <div id="contenedor_estado_wisphub" class="hidden flex items-center justify-center shrink-0">
+                    <span id="badge_estado_wisphub" class="text-[11px] uppercase tracking-wider font-black px-2 py-1 rounded-lg border shadow-sm"></span>
+                </div>
+              </div>
               <input type="url" id="form_link_cliente" placeholder="Enlace personalizado (URL)" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
           </div>
@@ -206,14 +212,14 @@
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Otros ¿Cuál?</label>
+             <label class="block text-xs font-bold text-slate-600 mb-1">Otros ¿Cuál?</label>
             <input type="text" id="form_otroscual" placeholder="Especificar otro medio" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
           </div>
 
           <div>
             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
                <span>Plan Contratado</span>
-              <button type="button" onclick="gestionarLista('config_lista_planes', 'Planes')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+               <button type="button" onclick="gestionarLista('config_lista_planes', 'Planes')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
             </label>
             <select id="form_plan" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
           </div>
@@ -227,7 +233,7 @@
           </div>
 
           <div>
-             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
+              <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
               <span>Se realizó</span>
               <button type="button" onclick="gestionarLista('config_lista_serealizo', 'Opciones de Se realizó')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
              </label>
@@ -238,8 +244,8 @@
              <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
               <span>Ya fue cliente</span>
               <button type="button" onclick="gestionarLista('config_lista_yafuecliente', 'Opciones de Cliente Histórico')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
-            </label>
-             <select id="form_yafuecliente" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
+             </label>
+            <select id="form_yafuecliente" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
           </div>
           
           <div>
@@ -268,7 +274,7 @@
 
           <div class="md:col-span-2 mt-4 flex gap-3 justify-end border-t border-slate-200 pt-4">
             <button type="button" id="btnEliminarRegistro" onclick="eliminarRegistroBD()" class="hidden bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-6 rounded-lg transition-colors">
-              🗑️ Eliminar Registro
+               🗑️ Eliminar Registro
             </button>
             <button type="button" onclick="cerrarModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold py-2 px-6 rounded-lg transition-colors">
               Cancelar
@@ -282,18 +288,37 @@
     </div>
   </div>
 
+  <div id="modalWisphubSeleccion" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110]">
+    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[85vh] flex flex-col">
+      <div class="bg-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+        <h3 class="font-black text-lg text-slate-800">Múltiples coincidencias</h3>
+        <button type="button" onclick="cerrarModalWisphub()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold p-1 leading-none">×</button>
+      </div>
+      <div class="p-4 bg-yellow-50 text-yellow-800 text-xs border-b border-yellow-200">
+        Se encontraron varios clientes que coinciden con tu búsqueda. Por favor selecciona el correcto:
+      </div>
+      
+      <div class="px-6 pt-4 pb-2 border-b border-slate-100">
+        <input type="text" id="filtroIpWisphub" placeholder="🔍 Buscar o filtrar por IP..." class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
+      </div>
+
+      <div class="p-6 pt-3 overflow-y-auto space-y-3" id="listaClientesWisphub">
+        </div>
+    </div>
+  </div>
+
   <div id="vistaAdminFiltros" class="hidden fixed inset-0 bg-slate-50 z-[110] overflow-auto flex flex-col">
     <div class="bg-slate-800 text-white px-6 py-4 flex justify-between items-center shadow-md">
       <div>
          <h2 class="text-xl font-bold">Base de Datos General (Solo Lectura)</h2>
-        <p class="text-xs text-slate-300 mt-1">Busca por palabra exacta o establece rangos de fechas.</p>
+         <p class="text-xs text-slate-300 mt-1">Busca por palabra exacta o establece rangos de fechas.</p>
       </div>
       <div class="flex items-center gap-3">
         <button id="btnSincronizarAdminFiltros" onclick="sincronizarVistaAdmin()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2">
           🔄 Sincronizar
         </button>
         <button onclick="cerrarVistaGeneralAdmin()" class="bg-slate-600 hover:bg-slate-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">
-          Volver a la Agenda
+           Volver a la Agenda
         </button>
       </div>
     </div>
@@ -311,62 +336,52 @@
 
   <script>
     // ==========================================
-    // ADAPTADOR PARA GITHUB PAGES / HOSTING EXTERNO
+    // ADAPTACIÓN API PARA GITHUB PAGES / HOST EXTERNO
     // ==========================================
-    const URL_WEB_APP = "https://script.google.com/macros/s/AKfycbx6XKT1zgsYKLe9wOyzM9blXnuU3gnJBEbmznvdbueYYgIqR04WUhhoBm32ClmvqiHv/exec";
+    const URL_API_GAS = "https://script.google.com/macros/s/AKfycbwJUFhAMu1lb4xNsCThFiWCz0Xi12ykBdOtyIciSNrvuFjfZpyb-UJSAijw3xReGl30kA/exec"; 
 
     if (typeof google === 'undefined') {
       window.google = {
         script: {
-          run: (function() {
-            let _onSuccess = null;
-            let _onFailure = null;
+          run: {
+            withSuccessHandler: function(onSuccess) { this._onSuccess = onSuccess; return this; },
+            withFailureHandler: function(onFailure) { this._onFailure = onFailure; return this; },
+            _call: function(funcName, args) {
+              const successCb = this._onSuccess;
+              const failureCb = this._onFailure;
+              this._onSuccess = null;
+              this._onFailure = null;
 
-            function callBackend(action, params) {
-              const successCb = _onSuccess;
-              const failureCb = _onFailure;
-              _onSuccess = null;
-              _onFailure = null;
-
-              fetch(URL_WEB_APP, {
+              fetch(URL_API_GAS, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify({ action: action, data: params })
+                body: JSON.stringify({ func: funcName, args: args })
               })
               .then(res => res.json())
-              .then(resData => {
-                if (successCb) successCb(resData);
+              .then(data => {
+                if (data && data.error) { if (failureCb) failureCb(data.error); } 
+                else { if (successCb) successCb(data.result); }
               })
-              .catch(err => {
-                if (failureCb) failureCb(err);
-              });
-            }
-
-            return {
-              withSuccessHandler: function(cb) { _onSuccess = cb; return this; },
-              withFailureHandler: function(cb) { _onFailure = cb; return this; },
-              validarAutenticacion: function() { callBackend('validarAutenticacion', { :  }); },
-              obtenerDatosAgenda: function() { callBackend('obtenerDatosAgenda', {}); },
-              guardarRegistroAgenda: function(datos) { callBackend('guardarRegistroAgenda', { datos: datos }); },
-              eliminarRegistroAgenda: function(rowNum, usuario) { callBackend('eliminarRegistroAgenda', { rowNum: rowNum, usuario: usuario }); },
-              renombrarCuadrillaBD: function(nombreViejo, nombreNuevo) { callBackend('renombrarCuadrillaBD', { nombreViejo: nombreViejo, nombreNuevo: nombreNuevo }); },
-              obtenerTodoContenidoBaseDatos: function() { callBackend('obtenerTodoContenidoBaseDatos', {}); }
-            };
-          })()
+              .catch(err => { if (failureCb) failureCb(err); });
+            },
+            validarAutenticacion: function(pin) { this._call('validarAutenticacion', [pin]); },
+            obtenerDatosAgenda: function() { this._call('obtenerDatosAgenda', []); },
+            buscarClienteWispHub: function(n, id) { this._call('buscarClienteWispHub', [n, id]); },
+            guardarRegistroAgenda: function(d) { this._call('guardarRegistroAgenda', [d]); },
+            eliminarRegistroAgenda: function(r, u) { this._call('eliminarRegistroAgenda', [r, u]); },
+            renombrarCuadrillaBD: function(v, n) { this._call('renombrarCuadrillaBD', [v, n]); },
+            obtenerTodoContenidoBaseDatos: function() { this._call('obtenerTodoContenidoBaseDatos', []); }
+          }
         }
       };
     }
 
-    // ==========================================
-    // ALMACENAMIENTO Y LÓGICA ORIGINAL
-    // ==========================================
     const safeStorage = {
         mem: {},
         getItem: function(key) { try { return localStorage.getItem(key); } catch(e) { return this.mem[key] || null; } },
         setItem: function(key, val) { try { localStorage.setItem(key, val); } catch(e) { this.mem[key] = val.toString(); } },
         removeItem: function(key) { try { localStorage.removeItem(key); } catch(e) { delete this.mem[key]; } }
     };
-    
     const safeSession = {
         mem: {},
         getItem: function(key) { try { return sessionStorage.getItem(key); } catch(e) { return this.mem[key] || null; } },
@@ -374,27 +389,27 @@
         removeItem: function(key) { try { sessionStorage.removeItem(key); } catch(e) { delete this.mem[key]; } }
     };
 
-    const tecnicosPorDefecto = ["Cuadrilla 1", "Cuadrilla 2", "Cuadrilla 3", "Cuadrilla 4", "IVAN", "EURIEL", "JOSE", "ULISES", "EDGAR" ];
-    const motivosPorDefecto = ["Instalación", "Soporte", "Cambio de Domicilio", "Desinstalación", "Sop/Des", "Des/Sop", "Migracion", "Reactivacion", "CAT" ];
-    const horariosPorDefecto = ["09:00am", "09:30am", "10:00am", "10:30am", "11:00am", "11:30am", "Antes de las 12:00pm", "12:00pm", "12:30pm","Despues de las 12:00pm", "01:00pm", "01:30pm", "02:00pm", "02:30pm","Antes de las 3:00pm", "03:00pm", "03:30pm", "Despues de las 3:00pm", "04:00pm", "04:30pm", "05:00pm", "05:30pm", "Despues de las 6:00pm", "Disponibilidad" ];
-    const agentesPorDefecto = ["Denise", "Jenni", "Luz", "Luis", "Brian", "Fernando", "Laura", "Mario", "Jaime", "Kennya" ];
-    const coloniasPorDefecto = ["11_Febrero", "2_Octubre", "20 Aniversario", "Acequias De Tabalaopa", "Acuapuerto", "Adolfo Lopez Mateos", "Aeropuerto", "Agricola Francisco Villa", "Aires Del Sur", "Alamedas Rinconada Oriente", "Alamos", "Alamos II", "Alamos ll", "Alamos lll", "Alamos lV", "Alamos lV", "Aldama", "Alfredo Chavez", "Ampleacion Los Huizaches", "Ampleacion Once De Febrero", "Ampliacion Crucero", "Ampliacion Crucero ll", "Ampliacion Diaz Ordaz", "Ampliacion Lomas De Oriente", "Ampliacion Nuevo Triunfo", "Ampliacion Pilares", "Ampliacion Universitaria", "Antiguo Lienzo Charro", "Antorcha Popular", "Aquiles Serdan", "Arroyo Nogales", "Arturo Gamiz", "Atenas", "Atenas lll", "Atenas lV", "Avalos", "Barrio De Londres", "Batalla de Sacramento", "Bella Cumbre", "Bellavista", "Berna Residencial", "Bomberos Estacion Sur", "Bosques", "Bosques Boreales", "Cafetales", "Camino Real", "Camino Real ll", "Camino Real V", "Campesina", "Campestre", "Campestre Las Alamedas", "Campestre Las Alamedas", "Campo Viejo", "Campo Viejo", "Campo Viejo", "Campo Viejo", "Canon Del Venado ll", "Carretera Aldama", "Carretera Chihuahua-Aldama", "Carretera Presa-Chihuahua", "Carrizalillo", "Cataluña Etapa II", "Catania Residencial", "CDP", "Centro", "Cerezos", "Cerrada San Luis", "Cerrada Vista Valencia", "Cerro De La cruz", "Cerro Grande", "Cerro Prieto", "Chihuahua 2000", "Chihuahua 2000 ll", "Chihuahua 2000-94", "Clara Cordova", "Colinas Del Sol", "Colonia Nuevas Delicias", "Colonia Sacramento", "Complejo Industrial Chihuahua", "Constituyentes", "Cordilleras", "Crucero", "Cruz Del Sur", "Cuahutemoc", "Cumbres De Robinson", "Cumbres De Robinson ll", "Cumbres De Sacramento", "Cumbres Del Sur", "Cumbres lll", "Cumbres Unversidad", "Dale", "Del Valle Cerrado", "Del Valle l", "Del Valle ll", "Del Valle, Cerrada Rio Amur", "Del Valle, Cerrada Rio Sena", "Del Valle, Cerrada Rio Uruguay", "Deportistas", "Desarrollo Urbano", "Diamante", "Diaz Ordaz", "Diego Lucero", "Divisadero", "Division Del Norte", "Division Del Norte ( Sauz )", "Dos De Junio", "Ejidal", "Ejido Bellavista", "Ejido Colonia Sacramento", "Ejido Colonia Sacramento", "Ejido La Noria", "Ejido Labor De Terrazas", "Ejido Lindero", "Ejido Nuevo Sacramento", "Ejido Rancheria Juarez", "Ejido Robinson", "Ejido Sacramento", "Ejido San Joaquin", "Ejido Villa Aldama", "El Arbol", "El Charco", "El Fundador", "El Huerto", "El Mimbre", "El Mimbre De Arriba", "El Porvenir", "El Ranchito", "El Refugio", "El Sauz", "Encinillas", "Esperanza", "Felipe Angeles", "Fidel Velazquez", "Flores Magon", "Fraccionamiento El Mineral", "Fraccionamiento Esla", "Fraccionamiento Roma", "Fraccionamiento Versalles", "Francisco Agricola", "Francisco Dominguez", "Francisco R Almada", "Francisco Villa", "Fundadores", "Girasoles", "Girasoles ll", "Girasoles lll", "Las Granjas", "Granjas Campestre Mirador", "Granjas Cerro Grande", "Granjas Chihuahua", "Granjas De Chihuahua", "Granjas Del Sur", "Granjas Del Sur", "Granjas Del Valle", "Granjas Del Valle", "Granjas Del Valle ll", "Granjas Las Torres", "Granjas Los Mezquites", "Granjas Paraiso", "Granjas Sacramento", "Granjas San Joaquin", "Granjas San Luis", "Granjas Santa Elena", "Granjas Santa Maria", "Granjas Santa Maria", "Granjas Villa Juarez l", "Ignacio Rodriguez", "Inalambrica", "Independencia", "Indigo", "Industrial", "Infonavit Insurgentes", "Infonavit Nacional", "Infonavit Saucito", "Insurgentes", "Jardines De Los Eucaliptos", "Jardines De Oriente l", "Jardines De Oriente ll", "Jardines De Oriente lX", "Jardines De Oriente lX", "Jardines De Oriente V", "Jardines De Oriente Vll", "Jardines De Sacramento", "Jardines De San Agustin", "Jardines de San Agustin ll", "Jardines De San Agustin lll", "Jardines Del Sol", "Jardines Los Eucaliptos", "Jorge Barousse", "Josefa Ortiz De Dominguez", "Juan Guereca", "Junta de los Ríos", "La Cima", "La Galera", "La Junta", "La Lluvia", "La Marina", "La Marqueza", "La Mesa", "La minita", "La Mora", "La Noria", "La Pista", "Labor de Terrazas", "Laderas De San Guillermo", "Laderas De San Guillermo ll", "Laderas De San Guillermo lll", "Ladrillera Tarahumara", "Ladrilleras", "Ladrilleros", "Laos Residencial", "Las Alamedas", "Las Aldabas", "Las Aldabas Cerrada Toscana", "Las Cruces", "Las Lunas", "Las Malvinas", "Las Margaritas", "Las Norias", "Las Nuevas Margaritas", "Las Pampas", "Las Pampas ll", "Las Torres", "Las Torres lll", "Las Torres Norte", "Lealtad l", "Lealtad ll", "Linda Vista", "Lomas Altas lll", "Lomas De Montecarlo", "Lomas De Oriente", "Lomas De Oriente - Los Portales", "Lomas Del Sol", "Lomas Karike", "Los Alamos", "Los Alamos Vl", "Los Arcos", "Los Arroyos", "Los Bosques", "Los Encinos De Oriente l", "Los Fresnos", "Los Huertos", "Los Huizaches", "Los Leones lV", "Los Llanos", "Los Naranjos", "Los Nogales", "Los Olivos", "Los Portales", "Los Potreros", "Luis Donaldo Colosio", "Madera 65", "Margarita Maza De Juarez", "Margaritas", "Maria Isabel", "Maria Luisa", "Marmol l", "Marmol ll", "Marmol lll", "Marmol Viejo", "Martin Lopez", "Maseru", "Maseru ll", "Melchor Ocampo", "Mexico", "Mezquite", "Miguel HIdalgo", "Miguel Sigala", "Minerales", "Miramar", "Misael Nunez", "Mision De San Ignacio", "Mision De Sisoguichi", "Molino De Agua", "Monte Bonito", "Monte Carlo ll", "Monte Olivo", "Monte Olivo ll", "Monte Verde", "Monte Xenit", "Monteverde", "Monteverde Cerrada Jardines De Granada", "Montolivo ll", "Montolivo lll", "Multimercado Zarco", "Nogales Ponderosa", "Novena Etapa", "Nueva Vizcaya Residencial", "Nuevas Delicias", "Nuevo Delicias", "Nuevo Milenio", "Nuevo Triunfo", "Obrera", "Pablo Gomez", "Padierna", "Palestina", "Palma Real", "Palma Real V", "Panoramico", "Parque Industrial Aeropuerto", "Parque Industrial Impulso", "Paseo De Las Flores", "Paseo De Los Alamos", "Paseo De Los Leones", "Paseos De Chihuahua", "Paseos De Los Leones", "Paseos De Los Leones V", "Paseos Del Camino Real", "Paseos Del Camino Real lll", "Paseos Del Camino Real lV", "Paseos Del Camino Real V", "Paso Del Norte", "Pavis Borunda", "Pedro Dominguez", "Pena Blanca", "Pensiones", "Plan De Ayala", "Ponce De Leon", "Popular", "Portal Del Real", "Portal Del Real ll", "Portal Del Valle", "Porticos De Bella Cumbre", "Porvenir", "Pozos Del Valle", "Praderas", "Praderas De San Antonio", "Praderas Del Norte", "Praderas Del Sur", "Praderas Del Sur ll", "Praderas Del Sur V", "Prado Sur", "Prado Sur ll", "Privadas Del Sur", "Privadas Del Sur ll", "Privadas Del Sur lll", "Privadas Del Sur V", "Puerta De Alcala", "Puerta De La Ciudad", "Puerta Del Valle", "Puerta Real", "Puerta Savona", "Puerta Savona V", "Punta Esperanza Oriente", "Punta Naranjos", "Punta Naranjos ll", "Punta Naranjos lV", "Punta Oriente", "Punta Oriente ll", "Punta Oriente lll", "Punta Oriente lV", "Punta Oriente V", "Punta Oriente Vl", "Quinta Arboleda", "Quinta Montecarlo", "Quinta San Carlos", "Quinta San Miguel", "Quinta Versalles", "Quinta Villalobos", "Quintas Carolinas", "Quintas Juan Pablo", "Quintas Quijote", "Quintas San Antonio", "Quintas Sebastian", "R. Almada", "Rancheria Juarez", "Rancho Enmedio", "Rancho Guadalupe", "Real Carolinas", "Real De Minas", "Real Plus", "Renovacion", "Residencial Campestre ll", "Residencial Leones", "Residencial Leones ll", "Revolucion", "Riberas De Sacramento", "Riberas De Sacramento ll", "Riberas De Sacramento lV", "Riberas Del Valle", "Ricardo Flores Magon", "Rigoberto Quiroz", "Rinconada De Sierra Azul", "Rinconada Los Nogales", "Rinconada Los Nogales lV", "Rinconada Oriente", "Rinconada Oriente ll", "Rinconada Oriente lll", "Rinconadas La Sierra", "Riscos Del Angel", "Robinson", "Rodolfo Aguilar", "Rodolfo Fierro", "Romance", "Romanzza", "Rosario", "Ruben Jaramillo", "Sacramento", "Salida A Cuauhtemoc", "San Agustin", "San Antonio", "San Felipe", "San Felipe lll", "San Fernando", "San Gabriel", "San Gabriel ll", "San Guillermo", "San Isidro", "San Joaquin", "San Jorge", "San Jose", "San Juan Bautista", "San Lazaro", "San Pedro", "San Rafael", "Santa Elena", "Santa Elena, Aquiles Serdan", "Santa Eulalia", "Santa Isabel", "Santa Maria", "Santa Rosa", "Santo Nino", "Saucito", "Secretaria De La Marina", "Sector 3", "Sector Tres Robinson", "SEP", "Sergio De La Torre", "Sierra Azul", "Sol de Oriente", "Sol De Oriente lll", "Solar Del Valle", "Solar Del Valle ll", "Tabalaopa", "Tahona", "Tarahumara", "Tarahumara Sur", "Terranova", "Tierra Bella", "Tierra y Libertad", "Toribio Ortega", "Torres Del Sur", "Tres Castillos", "Tres De Mayo", "Tres Marias", "Unidad", "Unidad De Esta Ciudad", "Unidad Nacional", "Unidad Proletaria", "Union Antorchista", "UP", "Urbi Villa Del Prado", "Urbi Villas Del Rey", "Valle De La Madrid", "Valle De San Pedro", "Valle De San Pedro ll", "Valle De San Pedro lll", "Valle De San Quintin", "Valle del Sauco", "Valle Del Sauz", "Valle Dorado", "Valle Escondido", "Valle Grande", "Valle Imperial", "Vallecillo", "Valles De Chihuahua", "Valles De San Agustin", "Valles Del Sur", "Vendanova", "Vendanova ll", "Veredas Del Sur", "Veredas Del Sur ll", "Veredas Del Sur lll", "Veteranos", "Via Residencial", "Vias De Sacramento", "Vicente Guereca", "Vientos de Sacramento", "Vilanova", "Vilanova ll", "Villa del real", "Villa Dolores", "Villa Juarez", "Villa Nueva", "Villa San Lorenzo V", "Villa Vieja", "Villas Del Real", "Villas Del Refugio", "Villas del Rey", "Villas Del Rey lll", "Villas Del Rey V", "Villas Del Sur", "Vinedos California", "Vista Hermosa", "Vistas", "Vistas Avalos", "Vistas Cerro Grande", "Vistas De San Guillermo", "Vistas De San Guillermo ll", "Vistas del Norte", "Vistas Del Norte ll", "Vistas Del Norte lll", "Vistas Del Norte lV", "Vistas Del Norte V", "Vistas Del Prado", "Vistas Del Prado ll", "Zootecnia", "Ignacio Allende", "Colinas Del Leon", "Bosques de san Pedro", "Monte Bonito", "Progreso", "Lomas Vallarta", "Sahuaros", "CNOP", "Proyecto Guadalupe Etapa I", "Las Vinas", "Fraccionamiento Laderas", "Nombre De Dios", "Cumbres de robinson IV", "Del Valle Cerrada Rio Niger", "Ejido Chacon", "Alleza Norte", "La Marqueza II", "Localidad Los Leones", "Barrio del Norte", "Guadalupe", "La Villa ( Nuevo Delicias )", "Ojo Del Apache", "Lomeli", "Hidalgo", "Morse", "Arquitos", "Tracia", "Herradero", "Ampleacion Tres De Mayo", "Los Pinos", "La Soledad", "Hacienda San Marcos", "Quinta Real", "Monarca", "La Joya", "Ejido Villa Aldama", "Integracion", "La Haciendita", "Rancho Los Leones", "Paquime", "Ejido Ocampo", "Ejido Estacion Terrazas", "Los Cerezos", "Caminos Del Valle", "Bahias", "Vistas Del Pedregal", "Avicola Y Ganadera Felipe Angeles", "Angel Trias", "Vida Digna", "Rancho Suarez", "Ejido El Fresno", "Ampleacion Ruiz Maseu", "Jardines Del Saucito", "Cumbres Del Eden" ];
-    const planesPorDefecto = ["30mb", "50mb", "Cortesia", "PCCC", "PCNCC", "CCCC", "CCNCC", "Gratis", "No aplica" ];
-    const confirmadaPorDefecto = ["No", "Sí", "Mensaje" ];
-    const serealizoPorDefecto = ["Pendiente", "Sí", "No", "Reagendar", "Reagendo", "Cancelo" ];
-    const yafueclientePorDefecto = ["No", "Sí" ];
-    const bienvenidaPorDefecto = ["Sí", "No", "Pendiente" ];
-    const mediosPorDefecto = ["Amigo/Familiar", "Facebook", "Radio", "Es cliente", "No contesto", "Rotulo", "Recomendación", "Folleto", "Página Web", "Otros"];
+    const tecnicosPorDefecto = ["Cuadrilla 1", "Cuadrilla 2", "Técnico Alfa"];
+    const motivosPorDefecto = ["Instalación", "Soporte", "Cambio de Domicilio", "Desinstalación"];
+    const horariosPorDefecto = ["08:00 - 10:00", "10:00 - 12:00", "12:00 - 14:00", "Disponibilidad"];
+    const agentesPorDefecto = ["Agente Juan", "Agente María", "Call Center"];
+    const coloniasPorDefecto = ["Centro", "Revolución"];
+    const planesPorDefecto = ["Básico", "Intermedio", "Avanzado"];
+    const confirmadaPorDefecto = ["No", "Sí"];
+    const serealizoPorDefecto = ["Pendiente", "Sí", "No"];
+    const yafueclientePorDefecto = ["No", "Sí"];
+    const bienvenidaPorDefecto = ["Sí", "No"];
+    const mediosPorDefecto = ["Facebook", "Recomendación", "Folleto", "Página Web", "Otros"];
     
+    // PERMISOS DE TÉCNICOS ACORDES A ESTRUCTURA
     const camposPermitidosTecnico = [
-      'form_comentariosdeltecnico', 'form_monto', 'form_serealizo', 
-      'form_plan', 'form_coordenadasoentrecalles', 'form_ip'
+      'form_monto', 'form_comentarios', 'form_comentarioscat', 'form_comentariosdeltecnico', 'form_plan'
     ];
     
     let baseDatosGoogle = [];
     let espaciosPorFecha = {};
     let rolUsuario = null;
-
+    
     function normalizarTecnico(texto) {
         if (!texto) return "";
         return texto.toString().trim().toLowerCase().split(/\s+/).map(function(w){
@@ -435,7 +450,7 @@
           }
       }
     };
-
+    
     function verificarPin() {
       try {
           const pinInput = document.getElementById('inputPin');
@@ -471,16 +486,16 @@
               })
               .validarAutenticacion(pin);
           } else {
-              msgError.innerText = "PIN Incorrecto";
-              msgError.classList.remove('hidden');
-              btn.innerHTML = "Ingresar";
-              btn.disabled = false;
-            }
+            // Protección: Se elimina validación local. Debe forzarse servidor web de App Script.
+            msgError.innerText = "Conexión rechazada. Servidor inalcanzable.";
+            msgError.classList.remove('hidden');
+            btn.innerHTML = "Ingresar";
+            btn.disabled = false;
           }
       } catch (e) {
           const err = document.getElementById('msgErrorPin');
           if (err) {
-              err.innerText = "Error en el navegador: " + e.message;
+              err.innerText = "Error local: " + e.message;
               err.classList.remove('hidden');
           }
           document.getElementById('btnLogin').innerHTML = "Ingresar";
@@ -516,6 +531,240 @@
       const btn = document.getElementById('btnLogin');
       btn.innerHTML = "Ingresar";
       btn.disabled = false;
+    }
+
+    let clientesTemporalesWisphub = [];
+    
+    function buscarEnWisphub(ev) {
+      if (ev) ev.preventDefault();
+      const nombreInput = document.getElementById('form_nombredelcliente').value.trim();
+      const inputIdElement = document.getElementById('form_id_wisphub');
+      const idInput = inputIdElement ? inputIdElement.value.trim() : "";
+      
+      if (nombreInput === "" && idInput === "") {
+        alert("Por favor, ingresa el Nombre o el ID del cliente para buscar en WispHub.");
+        return;
+      }
+      
+      const btn = ev.currentTarget || document.querySelector('button[title="Buscar en WispHub"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = "⏳";
+      btn.disabled = true;
+      
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(res) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            
+            if (res.status === 'success') {
+              llenarCamposClienteWisp(res.data);
+              alert("Datos del cliente encontrados y cargados exitosamente.");
+            } else if (res.status === 'multiple') {
+              mostrarModalSimilares(res.similares);
+            } else {
+              alert(res.message || "No se encontró ningún cliente con ese criterio en WispHub.");
+            }
+          })
+          .withFailureHandler(function(err) {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            alert("Error al intentar conectar con WispHub: " + err);
+          })
+          .buscarClienteWispHub(nombreInput, idInput);
+      } else {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alert("Entorno local detectado. Requiere despliegue de Apps Script.");
+      }
+    }
+
+    function llenarCamposClienteWisp(data) {
+      if(data.nombre) document.getElementById('form_nombredelcliente').value = data.nombre;
+      if(data.ip) document.getElementById('form_ip').value = data.ip;
+      if(data.telefono) document.getElementById('form_telefono').value = data.telefono.replace(/[^0-9]/g, '');
+      if(data.calleynumero) document.getElementById('form_calleynumero').value = data.calleynumero;
+      
+      if(data.colonia) {
+        let selectColonia = document.getElementById('form_coloniaofracc');
+        if (selectColonia) {
+          let options = Array.from(selectColonia.options).map(opt => opt.value);
+          if (!options.includes(data.colonia)) {
+            let opt = document.createElement('option');
+            opt.value = data.colonia;
+            opt.text = data.colonia;
+            selectColonia.appendChild(opt);
+          }
+          selectColonia.value = data.colonia;
+        }
+      }
+      if(data.coordenadas) document.getElementById('form_coordenadasoentrecalles').value = data.coordenadas;
+      
+      const badge = document.getElementById('badge_estado_wisphub');
+      const contenedorBadge = document.getElementById('contenedor_estado_wisphub');
+      if(badge && contenedorBadge) {
+          let estado = (data.estado || "Desconocido").toUpperCase();
+          badge.innerText = estado;
+          
+          badge.className = "text-[11px] uppercase tracking-wider font-black px-2 py-1 rounded-lg border shadow-sm";
+          if(estado === 'ACTIVO' || estado === 'INSTALADO') {
+              badge.classList.add('bg-emerald-100', 'text-emerald-800', 'border-emerald-300');
+          } else if(estado === 'SUSPENDIDO' || estado === 'CORTADO' || estado === 'MOROSO') {
+              badge.classList.add('bg-rose-100', 'text-rose-800', 'border-rose-300');
+          } else if(estado === 'INACTIVO' || estado === 'DESINSTALADO' || estado === 'CANCELADO') {
+              badge.classList.add('bg-slate-100', 'text-slate-800', 'border-slate-300');
+          } else if(estado === 'NUEVO' || estado === 'PENDIENTE') {
+              badge.classList.add('bg-blue-100', 'text-blue-800', 'border-blue-300');
+          } else {
+              badge.classList.add('bg-amber-100', 'text-amber-800', 'border-amber-300');
+          }
+          
+          contenedorBadge.classList.remove('hidden');
+      }
+    }
+
+    window.clientesSimilaresTemp = [];
+    
+    function mostrarModalSimilares(similares) {
+      window.clientesSimilaresTemp = similares;
+      renderizarListaSimilares(similares);
+      const filtroInput = document.getElementById('filtroIpSimilares');
+      if(filtroInput) filtroInput.value = "";
+      document.getElementById('modalClientesSimilares').classList.remove('hidden');
+    }
+
+    function renderizarListaSimilares(lista) {
+      const contenedor = document.getElementById('listaClientesSimilares');
+      contenedor.innerHTML = "";
+      if(!lista || lista.length === 0) {
+         contenedor.innerHTML = "<p class='text-sm text-slate-500 font-medium p-2'>No se encontraron coincidencias bajo esa dirección IP.</p>";
+         return;
+      }
+      
+      lista.forEach(function(c) {
+        const div = document.createElement('div');
+        div.className = "p-3 border border-slate-200 rounded-lg hover:bg-indigo-50 cursor-pointer transition-colors shadow-sm";
+        div.onclick = function() {
+          llenarCamposClienteWisp(c);
+          document.getElementById('modalClientesSimilares').classList.add('hidden');
+        };
+        
+        let estado = (c.estado || "Desconocido").toUpperCase();
+        let colorClase = estado === 'ACTIVO' ? 'bg-emerald-500' : (estado.includes('SUSPENDIDO') || estado === 'MOROSO' ? 'bg-rose-500' : 'bg-amber-500');
+
+        div.innerHTML = `
+          <div class="font-bold text-sm text-indigo-700">${c.nombre || 'Sin Nombre'} <span class="text-[10px] text-white bg-slate-400 px-1.5 py-0.5 rounded ml-2">ID: ${c.id || 'N/A'}</span> <span class="text-[10px] text-white ${colorClase} px-1.5 py-0.5 rounded ml-1">${estado}</span></div>
+          <div class="text-xs text-slate-600 mt-1.5 font-medium">
+            <span class="inline-block mr-3 bg-slate-100 px-1 py-0.5 rounded">📶 IP: <span class="text-slate-800">${c.ip || 'N/A'}</span></span>
+            <span class="inline-block mr-3">📞 Tel: ${c.telefono || 'N/A'}</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1.5 line-clamp-1">📍 ${c.calleynumero || ''} ${c.colonia || ''}</div>
+        `;
+        contenedor.appendChild(div);
+      });
+    }
+
+    function filtrarSimilaresIp() {
+      const filtro = document.getElementById('filtroIpSimilares').value.toLowerCase().trim();
+      const filtrados = window.clientesSimilaresTemp.filter(c => (c.ip || "").toLowerCase().includes(filtro));
+      renderizarListaSimilares(filtrados);
+    }
+    
+    function llenarFormularioWispHub(data) {
+        if (data.nombre) document.getElementById('form_nombredelcliente').value = data.nombre;
+        document.getElementById('form_ip').value = data.ip || "";
+        document.getElementById('form_telefono').value = data.telefono || "";
+        document.getElementById('form_calleynumero').value = data.calleynumero || "";
+        document.getElementById('form_coordenadasoentrecalles').value = data.coordenadas || "";
+        if (data.colonia) {
+            let valorExactoColonia = asegurarOpcionSelect('form_coloniaofracc', data.colonia);
+            document.getElementById('form_coloniaofracc').value = valorExactoColonia;
+            
+            try {
+                let listaColonias = [];
+                let stored = safeStorage.getItem('config_lista_colonias');
+                if (stored) listaColonias = JSON.parse(stored);
+                
+                if (listaColonias.indexOf(valorExactoColonia) === -1) {
+                    listaColonias.push(valorExactoColonia);
+                    safeStorage.setItem('config_lista_colonias', JSON.stringify(listaColonias));
+                }
+            } catch(e) {
+                console.error("Error guardando nueva colonia", e);
+            }
+        }
+        
+        const badge = document.getElementById('badge_estado_wisphub');
+        const contenedorBadge = document.getElementById('contenedor_estado_wisphub');
+        if(badge && contenedorBadge) {
+            let estado = (data.estado || "Desconocido").toUpperCase();
+            badge.innerText = estado;
+            badge.className = "text-[11px] uppercase tracking-wider font-black px-2 py-1 rounded-lg border shadow-sm";
+            if(estado === 'ACTIVO' || estado === 'INSTALADO') {
+                badge.classList.add('bg-emerald-100', 'text-emerald-800', 'border-emerald-300');
+            } else if(estado === 'SUSPENDIDO' || estado === 'CORTADO' || estado === 'MOROSO') {
+                badge.classList.add('bg-rose-100', 'text-rose-800', 'border-rose-300');
+            } else if(estado === 'INACTIVO' || estado === 'DESINSTALADO' || estado === 'CANCELADO') {
+                badge.classList.add('bg-slate-100', 'text-slate-800', 'border-slate-300');
+            } else if(estado === 'NUEVO' || estado === 'PENDIENTE') {
+                badge.classList.add('bg-blue-100', 'text-blue-800', 'border-blue-300');
+            } else {
+                badge.classList.add('bg-amber-100', 'text-amber-800', 'border-amber-300');
+            }
+            contenedorBadge.classList.remove('hidden');
+        }
+    }
+
+    function mostrarOpcionesWispHub(clientes) {
+        clientesTemporalesWisphub = clientes;
+        const inputFiltro = document.getElementById('filtroIpWisphub');
+        inputFiltro.value = ''; 
+        
+        renderizarListaWisphub(clientesTemporalesWisphub);
+        inputFiltro.onkeyup = function(e) {
+            const terminoBusqueda = e.target.value.toLowerCase().trim();
+            if (!terminoBusqueda) {
+                renderizarListaWisphub(clientesTemporalesWisphub);
+            } else {
+                const filtrados = clientesTemporalesWisphub.filter(c => (c.ip || "").toLowerCase().includes(terminoBusqueda));
+                renderizarListaWisphub(filtrados);
+            }
+        };
+        
+        document.getElementById('modalWisphubSeleccion').classList.remove('hidden');
+    }
+    
+    function renderizarListaWisphub(lista) {
+        const contenedor = document.getElementById('listaClientesWisphub');
+        contenedor.innerHTML = '';
+        
+        if (lista.length === 0) {
+            contenedor.innerHTML = '<div class="text-sm text-slate-500 text-center py-4 font-medium">No se encontraron registros con esa IP.</div>';
+            return;
+        }
+        
+        lista.forEach(function(c) {
+            const div = document.createElement('div');
+            div.className = "p-3 border border-slate-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 cursor-pointer transition-colors";
+            
+            const ipVisual = c.ip ? `<span class="font-bold text-indigo-700">IP: ${c.ip}</span> | ` : `<span class="text-slate-400">Sin IP registrada</span> | `;
+            
+            let estado = (c.estado || "Desconocido").toUpperCase();
+            let colorClase = estado === 'ACTIVO' ? 'bg-emerald-500' : (estado.includes('SUSPENDIDO') || estado === 'MOROSO' ? 'bg-rose-500' : 'bg-amber-500');
+            
+            div.innerHTML = '<div class="font-bold text-sm text-slate-800">' + (c.nombre || 'Sin nombre') + ' <span class="text-[10px] text-white ' + colorClase + ' px-1.5 py-0.5 rounded ml-1">' + estado + '</span></div>' +
+                            '<div class="text-xs text-slate-600 mt-1.5">' + ipVisual + '📍 ' + (c.calleynumero || 'Sin dirección') + ' | 🏙️ ' + (c.colonia || 'Sin colonia') + '</div>';
+            div.onclick = function() {
+                llenarFormularioWispHub(c);
+                cerrarModalWisphub();
+                alert("¡Datos del cliente seleccionados y rellenados con éxito!");
+            };
+            contenedor.appendChild(div);
+        });
+    }
+
+    function cerrarModalWisphub() {
+        document.getElementById('modalWisphubSeleccion').classList.add('hidden');
     }
 
     function sincronizarDatos() {
@@ -593,7 +842,7 @@
               if (!cita.espacio || isNaN(parseInt(cita.espacio)) || parseInt(cita.espacio) <= 0) {
                   let esp = 1;
                   while (baseDatosGoogle.some(function(c) { return c.fecha === fechaActual && c.tecnico === cita.tecnico && c.espacio == esp && c.rowNum != cita.rowNum; })) {
-                       esp++;
+                      esp++;
                   }
                   cita.espacio = esp;
               }
@@ -641,14 +890,12 @@
           }
           
           let btnRuta = '<button onclick="abrirRutaMapa(\'' + cuadrilla + '\', \'' + fechaActual + '\')" title="Ver ruta en mapa" class="hover:bg-indigo-500 bg-indigo-700 px-1.5 py-0.5 rounded text-xs transition-colors ml-2 shrink-0 border border-indigo-500 shadow-sm flex items-center gap-1">🗺️ Ruta</button>';
-          
           let htmlCol = '<div class="flex justify-between items-center bg-indigo-600 text-white p-2 rounded mb-3 shadow">' +
               '<h3 class="font-bold text-sm tracking-wide uppercase truncate w-full pl-1">' + cuadrilla + '</h3>' + btnRuta + adminControles +
           '</div><div class="space-y-3">';
           
           for(let i = 1; i <= numEspacios; i++) {
               const cita = baseDatosGoogle.find(function(c) { return c.tecnico === cuadrilla && c.fecha === fechaActual && c.espacio == i; });
-              
               if (cita) {
                   let motivoText = (cita.motivo || "").toLowerCase();
                   let colorClass = "border-slate-300 bg-white hover:border-indigo-400 text-slate-800"; 
@@ -673,13 +920,22 @@
                       if (cita.otroscual) medioTexto += ' (' + cita.otroscual + ')';
                       extrasHtml += '<div class="text-[10.5px] text-slate-600">📢 Medio: <span class="font-bold">' + medioTexto + '</span></div>';
                   }
+
+                  // INTEGRACIÓN WHATSAPP Y LLAMADAS
+                  if (cita.telefono) {
+                      let numLimpio = cita.telefono.replace(/[^0-9]/g, '');
+                      extrasHtml += '<div class="mt-2 flex gap-2">' +
+                          '<a href="tel:' + numLimpio + '" target="_blank" onclick="event.stopPropagation()" class="flex-1 text-center bg-slate-100 border border-slate-300 text-slate-700 px-2 py-1 rounded text-[10px] font-bold hover:bg-slate-200 transition-colors shadow-sm">📞 Llamar</a>' +
+                          '<a href="https://wa.me/' + numLimpio + '" target="_blank" onclick="event.stopPropagation()" class="flex-1 text-center bg-emerald-50 border border-emerald-300 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold hover:bg-emerald-100 transition-colors shadow-sm">💬 WhatsApp</a>' +
+                      '</div>';
+                  }
                   
                   htmlCol += '<div class="slot-card border-l-4 ' + colorClass + ' p-3 rounded-lg shadow-sm cursor-pointer transition-colors relative" ' +
                            'draggable="' + (rolUsuario === 'admin') + '" ' +
                            'ondragstart="dragStart(event, ' + cita.rowNum + ')" ' +
                            'onclick="abrirModalEdicion(' + cita.rowNum + ')" ' +
                            'ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, \'' + cuadrilla + '\', ' + i + ')">' +
-                           '<div class="absolute top-2 right-2 text-[10px] bg-white/50 text-slate-600 px-1.5 py-0.5 rounded font-bold">#' + i + '</div>' +
+                            '<div class="absolute top-2 right-2 text-[10px] bg-white/50 text-slate-600 px-1.5 py-0.5 rounded font-bold">#' + i + '</div>' +
                           '<div class="font-black text-sm pr-6">' + (cita.nombredelcliente || 'Sin Nombre') + '</div>' +
                           '<div class="text-[11px] font-bold mt-1 opacity-90">🕒 ' + (cita.horario || '--:--') + ' | <span class="uppercase">' + (cita.motivo || '') + '</span></div>' +
                           extrasHtml +
@@ -691,7 +947,7 @@
                            'ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, \'' + cuadrilla + '\', ' + i + ')">' +
                           '<span class="text-xl leading-none block mb-1">+</span>' +
                           '<span class="text-[10px] font-bold uppercase tracking-wider">Añadir al Espacio ' + i + '</span>' +
-                        '</div>';
+                      '</div>';
               }
           }
           htmlCol += '</div>';
@@ -707,7 +963,6 @@
         
         nombreNuevo = normalizarTecnico(nombreNuevo);
         if (nombreNuevo === "" || nombreNuevo === normalizarTecnico(nombreViejo)) return;
-        
         if (espaciosPorFecha[fecha] && espaciosPorFecha[fecha][nombreViejo]) {
             espaciosPorFecha[fecha][nombreNuevo] = espaciosPorFecha[fecha][nombreViejo];
             delete espaciosPorFecha[fecha][nombreViejo];
@@ -746,7 +1001,6 @@
 
     function eliminarCuadrilla(fecha, cuadrilla) {
         if (!confirm('¿Estás seguro de ocultar la columna de "' + cuadrilla + '" de la vista de hoy?\n\nNota: Los registros internos no se borrarán de Google Sheets, solo desaparecerá la columna de la agenda visual de forma temporal.')) return;
-        
         window.cuadrillasOcultas = window.cuadrillasOcultas || {};
         if (!window.cuadrillasOcultas[fecha]) window.cuadrillasOcultas[fecha] = {};
         window.cuadrillasOcultas[fecha][cuadrilla] = true;
@@ -762,27 +1016,36 @@
     }
 
     function asegurarOpcionSelect(idSelect, valor) {
-        if (!valor) return;
+        if (!valor) return valor;
         let select = document.getElementById(idSelect);
-        if (!select) return;
+        if (!select) return valor;
         let existe = false;
+        let valorExacto = valor;
         
         for (let i = 0; i < select.options.length; i++) {
-            if (select.options[i].value === valor) {
+            if (select.options[i].value.toString().trim().toLowerCase() === valor.toString().trim().toLowerCase()) {
                 existe = true;
+                valorExacto = select.options[i].value;
                 break;
             }
         }
+        
         if (!existe) {
             let opt = document.createElement('option');
             opt.value = valor;
             opt.innerText = valor;
             select.appendChild(opt);
         }
+        
+        return valorExacto;
     }
 
     function abrirModalNuevo(cuadrilla, espacio) {
       document.getElementById('formularioAgenda').reset();
+      
+      const contenedorBadge = document.getElementById('contenedor_estado_wisphub');
+      if(contenedorBadge) contenedorBadge.classList.add('hidden');
+      
       document.getElementById('form_rownum').value = '';
       document.getElementById('form_fecha').value = document.getElementById('filtroFecha').value;
       document.getElementById('form_cuadrilla').value = cuadrilla;
@@ -792,6 +1055,7 @@
       document.getElementById('form_tecnico').value = cuadrilla;
       document.getElementById('modalTitulo').innerText = "Nuevo Registro - " + cuadrilla;
       document.getElementById('btnEliminarRegistro').classList.add('hidden');
+      
       desbloquearCamposFormulario();
       document.getElementById('modalRegistro').classList.remove('hidden');
     }
@@ -801,6 +1065,10 @@
       if(!cita) return;
       
       document.getElementById('formularioAgenda').reset();
+      
+      const contenedorBadge = document.getElementById('contenedor_estado_wisphub');
+      if(contenedorBadge) contenedorBadge.classList.add('hidden');
+      
       document.getElementById('form_rownum').value = cita.rowNum;
       document.getElementById('form_fecha').value = cita.fecha;
       document.getElementById('form_cuadrilla').value = cita.tecnico;
@@ -940,6 +1208,7 @@
        if(!rowNum) return;
        
        const usuario = safeSession.getItem('nombre_usuario') || safeSession.getItem('sesion_activa');
+       
        google.script.run
          .withSuccessHandler(function(res) {
             if(res.status === 'success') {
@@ -958,7 +1227,6 @@
       let citas = baseDatosGoogle.filter(function(c) {
           return c.tecnico === cuadrilla && c.fecha === fecha && c.coordenadasoentrecalles && c.coordenadasoentrecalles.trim() !== "";
       });
-      
       if (citas.length === 0) {
           alert("No hay coordenadas o ubicaciones registradas para mapear la ruta de esta cuadrilla en el día seleccionado.");
           return;
@@ -1017,7 +1285,7 @@
     
     function dragOver(ev) { 
         if(rolUsuario === 'admin') { 
-            ev.preventDefault(); 
+            ev.preventDefault();
             ev.currentTarget.classList.add('drag-over');
         } 
     }
@@ -1028,6 +1296,7 @@
     
     function drop(ev, nuevaCuadrilla, nuevoEspacio) {
       if(rolUsuario !== 'admin') return;
+      
       ev.preventDefault(); 
       ev.currentTarget.classList.remove('drag-over');
       
@@ -1204,7 +1473,6 @@
     function construirTablaFiltrosAdmin() {
       const thead = document.getElementById('tablaAdminHeader');
       const tbody = document.getElementById('tablaAdminBody');
-      
       thead.innerHTML = '';
       tbody.innerHTML = '';
 
@@ -1284,7 +1552,6 @@
       const filtrosActivos = [];
       for (let index = 0; index < baseDatosCompletaAdmin.headers.length; index++) {
         const headerName = baseDatosCompletaAdmin.headers[index].toLowerCase();
-        
         if (headerName.includes('fecha')) {
           filtrosActivos[index] = {
             tipo: 'fecha',
@@ -1343,9 +1610,26 @@
           }
         }
       });
-      
       document.getElementById('totalFilasMostradas').textContent = `Registros filtrados: ${contadorVisibles} de ${rowsData.length}`;
     }
   </script>
+<div id="modalClientesSimilares" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[120]">
+  <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+    <div class="bg-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+      <h3 class="font-black text-lg text-slate-800">Seleccionar Cliente WispHub</h3>
+      <button type="button" onclick="document.getElementById('modalClientesSimilares').classList.add('hidden')" class="text-slate-400 hover:text-slate-600 text-2xl font-bold p-1 leading-none">×</button>
+    </div>
+    
+    <div class="p-4 border-b border-slate-200 bg-slate-50">
+      <label class="block text-xs font-bold text-slate-600 mb-1">Filtrar por IP:</label>
+      <input type="text" id="filtroIpSimilares" placeholder="Escribe la IP para filtrar..." onkeyup="filtrarSimilaresIp()" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    </div>
+
+    <div class="p-6 overflow-y-auto flex-1">
+      <div id="listaClientesSimilares" class="space-y-3">
+        </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
