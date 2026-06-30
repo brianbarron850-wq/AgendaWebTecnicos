@@ -297,13 +297,10 @@
       <div class="p-4 bg-yellow-50 text-yellow-800 text-xs border-b border-yellow-200">
         Se encontraron varios clientes que coinciden con tu búsqueda. Por favor selecciona el correcto:
       </div>
-      
       <div class="px-6 pt-4 pb-2 border-b border-slate-100">
         <input type="text" id="filtroIpWisphub" placeholder="🔍 Buscar o filtrar por IP..." class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
       </div>
-
-      <div class="p-6 pt-3 overflow-y-auto space-y-3" id="listaClientesWisphub">
-        </div>
+      <div class="p-6 pt-3 overflow-y-auto space-y-3" id="listaClientesWisphub"></div>
     </div>
   </div>
 
@@ -338,7 +335,7 @@
     // ==========================================
     // ADAPTACIÓN API PARA GITHUB PAGES / HOST EXTERNO
     // ==========================================
-    const URL_API_GAS = "https://script.google.com/macros/s/AKfycbzzFWA8iCttro7a8qYt9GbN0cmoHA_ePdatHPkKKOmMvLv8G1nJ-cc52rDFsRAGXqfG/exec"; 
+    const URL_API_GAS = "https://script.google.com/macros/s/AKfycbxwcOm6jknGKOYuirw7UAKHwQQj3q_aKSMzrm5YPl3mWnTcjBuJiKghkI7wCO069neF/exec"; 
 
     if (typeof google === 'undefined') {
       window.google = {
@@ -451,6 +448,7 @@
       }
     };
     
+    // FUNCION DE VERIFICACION REDISEÑADA PARA EVITAR CONGELAMIENTO
     function verificarPin() {
       try {
           const pinInput = document.getElementById('inputPin');
@@ -463,31 +461,31 @@
           btn.innerHTML = "⏳ Verificando...";
           btn.disabled = true;
           msgError.classList.add('hidden');
+          msgError.innerText = ""; // Limpiar error anterior
           
           if (typeof google !== 'undefined' && google.script && google.script.run) {
             google.script.run
               .withSuccessHandler(function(res) {
-                if (res.status === 'success') {
+                if (res && res.status === 'success') {
                   safeSession.setItem('sesion_activa', res.role);
                   if (res.nombre) safeSession.setItem('nombre_usuario', res.nombre);
                   iniciarAppConRol(res.role);
                 } else {
-                  msgError.innerText = res.message;
+                  msgError.innerText = (res && res.message) ? res.message : "Credenciales no válidas.";
                   msgError.classList.remove('hidden');
                   btn.innerHTML = "Ingresar";
                   btn.disabled = false;
                 }
               })
               .withFailureHandler(function(err) {
-                msgError.innerText = "Error servidor: " + err;
+                msgError.innerText = "Error del sistema: " + (err.message || err);
                 msgError.classList.remove('hidden');
                 btn.innerHTML = "Ingresar";
                 btn.disabled = false;
               })
               .validarAutenticacion(pin);
           } else {
-            // Protección: Se elimina validación local. Debe forzarse servidor web de App Script.
-            msgError.innerText = "Conexión rechazada. Servidor inalcanzable.";
+            msgError.innerText = "Entorno no válido. Usa Google Apps Script.";
             msgError.classList.remove('hidden');
             btn.innerHTML = "Ingresar";
             btn.disabled = false;
