@@ -441,8 +441,6 @@
               this._onSuccess = null;
               this._onFailure = null;
               
-              // MODIFICADO: Utiliza x-www-form-urlencoded para que el navegador trate la petición como formulario 
-              // Esto anula el preflight OPTIONS de CORS y permite que el contenido sobreviva al redirect 302 hacia googleusercontent
               fetch(URL_API_GAS, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -465,7 +463,6 @@
               .catch(err => { 
                 console.error("Error en conexión:", err);
                 
-                // MENSJAJE MEJORADO PARA DETECTAR FAILED TO FETCH
                 let errorMsg = err.message || err.toString();
                 if (errorMsg.includes('Failed to fetch')) {
                   errorMsg = "Failed to fetch: La petición ha sido bloqueada. Revisa que la URL de la API sea correcta, que la implementación de Apps Script tenga acceso 'Cualquier persona', y que no tengas bloqueadores de anuncios (AdBlock, uBlock, Brave Shields) interfiriendo con la conexión.";
@@ -527,7 +524,6 @@
     let autoSyncInterval = null;
     window.isDragging = false;
     
-    // CONFIGURACIÓN DE LAS TABLAS DEL DASHBOARD
     const configTablas = {
         tabla1: { titulo: "Instalaciones", tipo: "bar", labelsCol: true },
         tabla2: { titulo: "Paquetes", tipo: "bar", labelsCol: true },
@@ -664,9 +660,6 @@
       btn.disabled = false;
     }
 
-    // ==========================================
-    // OPTIMIZACIÓN DE RENDIMIENTO
-    // ==========================================
     function iniciarSincronizacionAutomatica() {
       if(autoSyncInterval) clearInterval(autoSyncInterval);
       
