@@ -443,8 +443,9 @@
               
               fetch(URL_API_GAS, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'payload=' + encodeURIComponent(JSON.stringify({ func: funcName, args: args })),
+                // CORRECCIÓN: Se elimina 'headers: { "Content-Type": "text/plain" }' explícito 
+                // para evitar el bloqueo por CORS (Preflight OPTIONS) que causa el Error 404 o "Failed to fetch".
+                body: JSON.stringify({ func: funcName, args: args }),
                 redirect: 'follow'
               })
               .then(res => {
@@ -524,6 +525,7 @@
     let autoSyncInterval = null;
     window.isDragging = false;
     
+    // CONFIGURACIÓN DE LAS TABLAS DEL DASHBOARD
     const configTablas = {
         tabla1: { titulo: "Instalaciones", tipo: "bar", labelsCol: true },
         tabla2: { titulo: "Paquetes", tipo: "bar", labelsCol: true },
@@ -660,6 +662,9 @@
       btn.disabled = false;
     }
 
+    // ==========================================
+    // OPTIMIZACIÓN DE RENDIMIENTO
+    // ==========================================
     function iniciarSincronizacionAutomatica() {
       if(autoSyncInterval) clearInterval(autoSyncInterval);
       
@@ -807,23 +812,25 @@
         div.innerHTML = `
           <div class="font-bold text-sm text-indigo-700">${c.nombre || 'Sin Nombre'} <span class="text-[10px] text-white bg-slate-400 px-1.5 py-0.5 rounded ml-2">ID: ${c.id || 'N/A'}</span> <span class="text-[10px] text-white ${colorClase} px-1.5 py-0.5 rounded ml-1">${estado}</span></div>
           <div class="text-xs text-slate-600 mt-1.5 font-medium">
-            <span class="inline-block w-full">📍 ${c.calleynumero || 'N/A'}, ${c.colonia || 'N/A'}</span>
+            <span class="inline-block mr-3 bg-slate-100 px-1 py-0.5 rounded">📶 IP: <span class="text-slate-800">${c.ip || 'N/A'}</span></span>
+            <span class="inline-block mr-3">📞 Tel: ${c.telefono || 'N/A'}</span>
           </div>
+          <div class="text-[11px] text-slate-500 mt-1.5 line-clamp-1">📍 ${c.calleynumero || ''} ${c.colonia || ''}</div>
         `;
         contenedor.appendChild(div);
       });
     }
 
     function filtrarSimilaresIp() {
-      const input = document.getElementById('filtroIpSimilares').value.toLowerCase().trim();
-      if(input === "") {
-        renderizarListaSimilares(window.clientesSimilaresTemp);
-      } else {
+        const query = document.getElementById('filtroIpSimilares').value.toLowerCase().trim();
+        if(!query) {
+           renderizarListaSimilares(window.clientesSimilaresTemp);
+           return;
+        }
         const filtrados = window.clientesSimilaresTemp.filter(function(c) {
-          return (c.ip && c.ip.toLowerCase().includes(input));
+            return (c.ip || "").toLowerCase().includes(query);
         });
         renderizarListaSimilares(filtrados);
-      }
     }
   </script>
 </body>
