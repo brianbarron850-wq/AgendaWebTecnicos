@@ -540,6 +540,8 @@
     ];
     
     let baseDatosGoogle = [];
+    // MEJORA RENDIMIENTO: restaurar datos desde caché de sesión para render inmediato
+    try { var _bC = safeStorage.getItem('bDG_v1'); if(_bC) { baseDatosGoogle = JSON.parse(_bC); } } catch(e) {}
     let espaciosPorFecha = {};
     let rolUsuario = null;
     let autoSyncInterval = null;
@@ -705,6 +707,7 @@
              
              if (oldDataStr !== newDataStr) {
                 baseDatosGoogle = datos || [];
+                try { safeStorage.setItem('bDG_v1', JSON.stringify(baseDatosGoogle)); } catch(e) {} // MEJORA: caché de sesión
                 baseDatosGoogle.forEach(function(c) {
                     if (c.tecnico) c.tecnico = normalizarTecnico(c.tecnico);
                 });
@@ -932,6 +935,7 @@
           .withSuccessHandler(function(datos) {
             baseDatosGoogle = datos || [];
             baseDatosGoogle.forEach(function(c) { if (c.tecnico) c.tecnico = normalizarTecnico(c.tecnico); });
+            try { safeStorage.setItem('bDG_v1', JSON.stringify(baseDatosGoogle)); } catch(e) {} // MEJORA: caché de sesión
             renderizarAgenda();
             if(btn) btn.innerHTML = "🔄 Sincronizar";
           })
@@ -952,14 +956,20 @@
       let manualesHoy = window.cuadrillasManuales[fechaActual] || {};
       let ocultasHoy = window.cuadrillasOcultas[fechaActual] || {};
 
+      // MEJORA RENDIMIENTO: índice por técnico evita .indexOf() O(n²) y .filter() O(n) por cuadrilla
+      const _hLow = horariosPorDefecto.map(function(h) { return h.toLowerCase(); }); // calculado UNA vez
+      var _cxT = {}; // { tecnico: [citas] } para el día actual
       let cuadrillasHoy = [];
       baseDatosGoogle.forEach(function(c) {
-          if (c.fecha === fechaActual && c.tecnico && cuadrillasHoy.indexOf(c.tecnico) === -1) { cuadrillasHoy.push(c.tecnico); }
+          if (c.fecha === fechaActual && c.tecnico) {
+              if (!_cxT[c.tecnico]) { _cxT[c.tecnico] = []; cuadrillasHoy.push(c.tecnico); }
+              _cxT[c.tecnico].push(c);
+          }
       });
       cuadrillasHoy.forEach(function(tec) {
-          let citasTec = baseDatosGoogle.filter(function(c) { return c.fecha === fechaActual && c.tecnico === tec; });
+          let citasTec = (_cxT[tec] || []).slice(); // MEJORA: lookup O(1) por técnico
           
-          const horariosLower = horariosPorDefecto.map(function(h) { return h.toLowerCase(); });
+          const horariosLower = _hLow; // MEJORA: reutilizado del scope externo
           
           citasTec.sort(function(a, b) {
               let horA = (a.horario || "").trim().toLowerCase();
@@ -995,6 +1005,16 @@
               return 0;
           });
           citasTec.forEach(function(cita, idx) { cita.espacio = idx + 1; });
+      });
+
+      // MEJORA RENDIMIENTO: índice { tecnico: { espacio: cita } } para consulta O(1) en el render
+      // Reemplaza baseDatosGoogle.find() O(n) por cada slot de cada cuadrilla
+      var _rI = {};
+      baseDatosGoogle.forEach(function(c) {
+          if (c.fecha === fechaActual && c.tecnico && c.espacio) {
+              if (!_rI[c.tecnico]) _rI[c.tecnico] = {};
+              _rI[c.tecnico][parseInt(c.espacio)] = c;
+          }
       });
       
       let cuadrillasDelDia = {};
@@ -1058,7 +1078,7 @@
               '<h3 class="font-bold text-sm tracking-wide uppercase truncate w-full pl-1">' + cuadrilla + '</h3>' + btnRuta + adminControles +
           '</div><div class="space-y-3">';
           for(let i = 1; i <= numEspacios; i++) {
-              const cita = baseDatosGoogle.find(function(c) { return c.tecnico === cuadrilla && c.fecha === fechaActual && c.espacio == i; });
+              const cita = (_rI[cuadrilla] || {})[i]; // MEJORA: lookup O(1) en lugar de .find() O(n)
               if (cita) {
                   let motivoText = (cita.motivo || "").toLowerCase();
                   let serealizoVal = (cita.serealizo || "").toString().trim().toLowerCase();
