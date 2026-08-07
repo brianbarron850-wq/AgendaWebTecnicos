@@ -532,6 +532,7 @@
             obtenerTodoContenidoBaseDatos: function() { this._call('obtenerTodoContenidoBaseDatos', []); },
             obtenerDatosDashboard: function() { this._call('obtenerDatosDashboard', []); },
             obtenerAuditoriaEliminados: function() { this._call('obtenerAuditoriaEliminados', []); },
+            restaurarRegistroEliminado: function(sheetRow) { this._call('restaurarRegistroEliminado', [sheetRow]); },
             actualizarFechasDashboard: function(d1, g1) { this._call('actualizarFechasDashboard', [d1, g1]); }
           }
         }
@@ -1728,16 +1729,24 @@
                     document.getElementById('cargandoAuditoria').classList.remove('hidden');
                     return;
                 }
+                var _hiddenCol = datos.headers.findIndex(function(h){ return h.toLowerCase() === 'datos_originales'; });
+                var displayHeaders = datos.headers.filter(function(h){ return h.toLowerCase() !== 'datos_originales'; });
                 var thead = document.getElementById('tablaAuditoriaHeader');
-                thead.innerHTML = '<tr>' + datos.headers.map(function(h) {
+                thead.innerHTML = '<tr>' + displayHeaders.map(function(h) {
                     return '<th class="px-4 py-3 font-bold text-xs uppercase tracking-wider border-b border-red-100">' + h + '</th>';
-                }).join('') + '</tr>';
+                }).join('') + '<th class="px-4 py-3 font-bold text-xs uppercase tracking-wider border-b border-red-100 text-center">Acción</th></tr>';
                 var tbody = document.getElementById('tablaAuditoriaBody');
                 tbody.innerHTML = datos.rows.map(function(row, idx) {
+                    var cells = row.cells || row;
+                    var sheetRow = row.sheetRow || 0;
+                    var displayCells = cells.filter(function(c, ci){ return ci !== _hiddenCol; });
+                    var nombre = (cells[4] || cells[3] || 'este registro').replace(/['"]/g, '');
                     return '<tr class="' + (idx % 2 === 0 ? 'bg-white' : 'bg-red-50/40') + ' hover:bg-red-50 transition-colors">' +
-                        row.map(function(cell) {
+                        displayCells.map(function(cell) {
                             return '<td class="px-4 py-2 text-slate-700 whitespace-nowrap">' + (cell || '-') + '</td>';
-                        }).join('') + '</tr>';
+                        }).join('') +
+                        '<td class="px-4 py-2 text-center"><button onclick="restaurarRegistro(' + sheetRow + ','' + nombre + '')" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-1 px-3 rounded-lg transition-colors whitespace-nowrap">🔄 Restaurar</button></td>' +
+                        '</tr>';
                 }).join('');
                 document.getElementById('tablaAuditoria').classList.remove('hidden');
                 document.getElementById('totalAuditoria').textContent = datos.rows.length + ' registro(s) encontrado(s)';
@@ -1747,6 +1756,24 @@
                 document.getElementById('cargandoAuditoria').textContent = 'Error al cargar la auditoría: ' + err;
             })
             .obtenerAuditoriaEliminados();
+    }
+
+
+    function restaurarRegistro(sheetRow, nombre) {
+        if (!confirm('¿Restaurar "' + nombre + '" a la Agenda?\n\nEl registro volverá a aparecer y podrá ser editado normalmente.')) return;
+        google.script.run
+            .withSuccessHandler(function(res) {
+                if (res && res.success) {
+                    alert('✅ ' + (res.mensaje || 'Restaurado correctamente.'));
+                    cargarAuditoria();
+                } else {
+                    alert('❌ Error al restaurar: ' + (res && res.error ? res.error : 'Error desconocido'));
+                }
+            })
+            .withFailureHandler(function(err) {
+                alert('❌ Error al restaurar: ' + err);
+            })
+            .restaurarRegistroEliminado(sheetRow);
     }
 
     function guardarFechasDashboard() {
