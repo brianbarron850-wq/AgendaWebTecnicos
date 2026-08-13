@@ -458,7 +458,7 @@
     // IMPORTANTE: Asegúrate de que esta URL sea correcta y esté implementada como:
     // 1. Ejecutar como: "Yo"
     // 2. Quién tiene acceso: "Cualquier persona" (Anyone)
-    const URL_API_GAS = "https://script.google.com/macros/s/AKfycbz5SPnLXSRpucrEp1ymTG0g-s0kpvA_fPWNIJMaCknB-r0Rif7nWAx1Z91Enn9_uY8r/exechttps://script.google.com/macros/s/AKfycbz5SPnLXSRpucrEp1ymTG0g-s0kpvA_fPWNIJMaCknB-r0Rif7nWAx1Z91Enn9_uY8r/exec";
+    const URL_API_GAS = "https://script.google.com/macros/s/AKfycbz5SPnLXSRpucrEp1ymTG0g-s0kpvA_fPWNIJMaCknB-r0Rif7nWAx1Z91Enn9_uY8r/exec";
     
     if (typeof google === 'undefined') {
       window.google = {
@@ -475,28 +475,39 @@
               const requestBody = JSON.stringify({ func: funcName, args: args });
               const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
               const REINTENTOS_MAX = 3;
-              const ESPERAS_MS = [0, 1500, 3000]; // FIX E1: reintentos para 404 por redirección POST→GET en GAS
+              const ESPERAS_MS = [0, 1000, 2000];
+              const TIMEOUT_MS = 12000; // FIX LOGIN: timeout de 12s por intento — evita que el botón quede bloqueado indefinidamente
 
               const ejecutar = async () => {
                 for (let i = 0; i < REINTENTOS_MAX; i++) {
                   if (i > 0) await delay(ESPERAS_MS[i]);
 
                   let res;
+                  const _ctrl = new AbortController();
+                  const _tid = setTimeout(() => _ctrl.abort(), TIMEOUT_MS);
                   try {
                     res = await fetch(URL_API_GAS, {
                       method: 'POST',
                       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                       body: requestBody,
-                      redirect: 'follow'
+                      redirect: 'follow',
+                      signal: _ctrl.signal
                     });
+                    clearTimeout(_tid);
                   } catch (fetchErr) {
-                    // FIX E2: error de red (Failed to fetch) — reintentar si no es el último intento
+                    clearTimeout(_tid);
+                    // FIX E2: error de red o timeout — reintentar si no es el último intento
                     if (i < REINTENTOS_MAX - 1) continue;
+                    if (fetchErr.name === 'AbortError') {
+                      throw new Error("Tiempo de espera agotado. Verifica tu conexión e intenta de nuevo.");
+                    }
                     throw fetchErr;
                   }
 
                   if (!res.ok) {
-                    // FIX E1: error HTTP 404 (redirección POST→GET) — reintentar
+                    if (res.status === 401 || res.status === 403) {
+                      throw new Error("Acceso denegado (" + res.status + "): El despliegue de Apps Script requiere acceso 'Cualquier persona' sin inicio de sesion.");
+                    }
                     if (i < REINTENTOS_MAX - 1) continue;
                     throw new Error("Fallo en la red: " + res.status);
                   }
@@ -508,8 +519,12 @@
                   }
 
                   const data = JSON.parse(text);
-                  if (data && data.error) { if (failureCb) failureCb(data.error); }
-                  else { if (successCb) successCb(data.result); }
+                  if (data && data.error) {
+                    if (failureCb) failureCb(data.error);
+                  } else {
+                    // Aislar callback: error en successCb no debe disparar failureCb
+                    try { if (successCb) successCb(data.result); } catch(cbErr) { console.error("Error en callback:", cbErr); }
+                  }
                   return; // Éxito — salir del bucle
                 }
               };
@@ -699,6 +714,7 @@
         document.querySelectorAll('.admin-only').forEach(function(el) { el.classList.remove('hidden') });
       }
       
+      if (baseDatosGoogle.length > 0) { try { renderizarAgenda(); } catch(e) {} }
       sincronizarDatos();
       iniciarSincronizacionAutomatica();
     }
@@ -733,12 +749,11 @@
     function sincronizarDatosSilencioso() {
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
+          .withFailureHandler(function(err) { console.warn('Auto-sync silencioso fallo:', err); })
           .withSuccessHandler(function(datos) {
              if (!datos) return;
-             let oldDataStr = JSON.stringify(baseDatosGoogle);
-             let newDataStr = JSON.stringify(datos);
-             
-             if (oldDataStr !== newDataStr) {
+             if (datos.length === baseDatosGoogle.length && JSON.stringify(datos) === JSON.stringify(baseDatosGoogle)) return;
+             {
                 baseDatosGoogle = datos || [];
                 try { safeStorage.setItem('bDG_v1', JSON.stringify(baseDatosGoogle)); } catch(e) {} // MEJORA: caché de sesión
                 baseDatosGoogle.forEach(function(c) {
