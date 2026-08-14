@@ -522,8 +522,7 @@
                   if (data && data.error) {
                     if (failureCb) failureCb(data.error);
                   } else {
-                    // Aislar callback: error en successCb no debe disparar failureCb
-                    try { if (successCb) successCb(data.result); } catch(cbErr) { console.error("Error en callback:", cbErr); }
+                    if (successCb) successCb(data.result);
                   }
                   return; // Éxito — salir del bucle
                 }
@@ -714,7 +713,6 @@
         document.querySelectorAll('.admin-only').forEach(function(el) { el.classList.remove('hidden') });
       }
       
-      if (baseDatosGoogle.length > 0) { try { renderizarAgenda(); } catch(e) {} }
       sincronizarDatos();
       iniciarSincronizacionAutomatica();
     }
@@ -749,10 +747,10 @@
     function sincronizarDatosSilencioso() {
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
-          .withFailureHandler(function(err) { console.warn('Auto-sync silencioso fallo:', err); })
           .withSuccessHandler(function(datos) {
              if (!datos) return;
-             if (datos.length === baseDatosGoogle.length && JSON.stringify(datos) === JSON.stringify(baseDatosGoogle)) return;
+             var _nStr = JSON.stringify(datos);
+             if (_nStr === JSON.stringify(baseDatosGoogle)) return;
              {
                 baseDatosGoogle = datos || [];
                 try { safeStorage.setItem('bDG_v1', JSON.stringify(baseDatosGoogle)); } catch(e) {} // MEJORA: caché de sesión
