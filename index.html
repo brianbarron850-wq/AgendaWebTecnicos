@@ -472,70 +472,45 @@
               this._onSuccess = null;
               this._onFailure = null;
 
-              const requestBody = JSON.stringify({ func: funcName, args: args });
-              const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-              const REINTENTOS_MAX = 3;
-              const ESPERAS_MS = [0, 1000, 2000];
-              const TIMEOUT_MS = 12000; // FIX LOGIN: timeout de 12s por intento — evita que el botón quede bloqueado indefinidamente
+              var _body = JSON.stringify({ func: funcName, args: args });
+              var _opts = { method: 'POST', headers: {'Content-Type':'text/plain;charset=utf-8'}, body: _body, redirect: 'follow' };
 
-              const ejecutar = async () => {
-                for (let i = 0; i < REINTENTOS_MAX; i++) {
-                  if (i > 0) await delay(ESPERAS_MS[i]);
-
-                  let res;
-                  const _ctrl = new AbortController();
-                  const _tid = setTimeout(() => _ctrl.abort(), TIMEOUT_MS);
-                  try {
-                    res = await fetch(URL_API_GAS, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                      body: requestBody,
-                      redirect: 'follow',
-                      signal: _ctrl.signal
-                    });
-                    clearTimeout(_tid);
-                  } catch (fetchErr) {
-                    clearTimeout(_tid);
-                    // FIX E2: error de red o timeout — reintentar si no es el último intento
-                    if (i < REINTENTOS_MAX - 1) continue;
-                    if (fetchErr.name === 'AbortError') {
-                      throw new Error("Tiempo de espera agotado. Verifica tu conexión e intenta de nuevo.");
-                    }
-                    throw fetchErr;
-                  }
-
-                  if (!res.ok) {
-                    if (res.status === 401 || res.status === 403) {
-                      throw new Error("Acceso denegado (" + res.status + "): El despliegue de Apps Script requiere acceso 'Cualquier persona' sin inicio de sesion.");
-                    }
-                    if (i < REINTENTOS_MAX - 1) continue;
-                    throw new Error("Fallo en la red: " + res.status);
-                  }
-
-                  const text = await res.text();
-
-                  if (text.trim().startsWith('<')) {
-                    throw new Error("⚠️ Alerta de Google:\nLa conexión devolvió una página en lugar de datos.\n\nEsto suele pasar porque los permisos de la URL en Apps Script no están en 'Cualquier Persona' o porque excediste las cuotas.");
-                  }
-
-                  const data = JSON.parse(text);
-                  if (data && data.error) {
-                    if (failureCb) failureCb(data.error);
-                  } else {
-                    if (successCb) successCb(data.result);
-                  }
-                  return; // Éxito — salir del bucle
+              function _parsear(res) {
+                if (res.status === 401 || res.status === 403) {
+                  throw new Error('Acceso denegado (' + res.status + '). En Apps Script: Implementar → acceso "Cualquier persona".');
                 }
-              };
+                if (!res.ok) throw new Error('Error de red: ' + res.status);
+                return res.text();
+              }
 
-              ejecutar().catch(err => {
-                console.error("Error en conexión:", err);
-                let errorMsg = err.message || err.toString();
-                if (errorMsg.includes('Failed to fetch')) {
-                  errorMsg = "Failed to fetch: La petición ha sido bloqueada. Revisa que la URL de la API sea correcta, que la implementación de Apps Script tenga acceso 'Cualquier persona', y que no tengas bloqueadores de anuncios (AdBlock, uBlock, Brave Shields) interfiriendo con la conexión.";
+              function _manejar(text) {
+                if (text.trim().charAt(0) === '<') {
+                  throw new Error('GAS devolvió HTML. Verifica permisos del despliegue (acceso "Cualquier persona").');
                 }
-                if (failureCb) failureCb(errorMsg);
-              });
+                var data = JSON.parse(text);
+                if (data && data.error) { if (failureCb) failureCb(data.error); }
+                else { if (successCb) successCb(data.result); }
+              }
+
+              // Intento principal; si devuelve 404 se reintenta una vez tras 1.2s
+              fetch(URL_API_GAS, _opts)
+                .then(function(res) {
+                  if (res.status === 404) {
+                    return new Promise(function(ok){ setTimeout(ok, 1200); })
+                      .then(function(){ return fetch(URL_API_GAS, _opts); })
+                      .then(_parsear);
+                  }
+                  return _parsear(res);
+                })
+                .then(_manejar)
+                .catch(function(err) {
+                  console.error('[GAS _call]', funcName, err.message || err);
+                  var msg = err.message || String(err);
+                  if (msg.indexOf('Failed to fetch') !== -1 || msg.indexOf('NetworkError') !== -1) {
+                    msg = 'No se pudo conectar con el servidor. Verifica tu conexión y que el despliegue de Apps Script sea público (acceso "Cualquier persona").';
+                  }
+                  if (failureCb) failureCb(msg);
+                });
             },
             validarAutenticacion: function(pin) { this._call('validarAutenticacion', [pin]); },
             obtenerDatosAgenda: function() { this._call('obtenerDatosAgenda', []); },
@@ -680,7 +655,9 @@
                 }
               })
               .withFailureHandler(function(err) {
-                msgError.innerText = "Error del sistema: " + (err.message || err);
+                var msg = (err && err.message) ? err.message : String(err);
+                msgError.textContent = '⚠ ' + msg;
+                msgError.style.cssText = 'display:block;color:#dc2626;font-size:12px;font-weight:700;margin-top:10px;line-height:1.5;white-space:pre-wrap;';
                 msgError.classList.remove('hidden');
                 btn.innerHTML = "Ingresar";
                 btn.disabled = false;
