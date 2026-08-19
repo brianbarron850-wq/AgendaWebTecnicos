@@ -460,10 +460,14 @@
     // 2. Quién tiene acceso: "Cualquier persona" (Anyone)
     const URL_API_GAS = "https://script.google.com/macros/s/AKfycbz5SPnLXSRpucrEp1ymTG0g-s0kpvA_fPWNIJMaCknB-r0Rif7nWAx1Z91Enn9_uY8r/exec";
     
-    if (typeof google === 'undefined') {
-      window.google = {
-        script: {
-          run: {
+    // Siempre inicializar el proxy GAS para hosting externo (GitHub Pages, etc.)
+    // No usamos "if undefined" porque extensiones de Chrome u otras librerías
+    // pueden definir "google" sin el API de Apps Script, rompiendo el proxy.
+    if (typeof window.google === 'undefined') window.google = {};
+    if (!window.google.script) window.google.script = {};
+    // Solo sobreescribimos si NO estamos dentro del iframe real de GAS
+    if (!window.google.script.run || typeof window.google.script.run.withSuccessHandler !== 'function') {
+      window.google.script.run = {
             withSuccessHandler: function(onSuccess) { this._onSuccess = onSuccess; return this; },
             withFailureHandler: function(onFailure) { this._onFailure = onFailure; return this; },
             _call: function(funcName, args) {
@@ -523,8 +527,6 @@
             obtenerAuditoriaEliminados: function() { this._call('obtenerAuditoriaEliminados', []); },
             restaurarRegistroEliminado: function(sheetRow) { this._call('restaurarRegistroEliminado', [sheetRow]); },
             actualizarFechasDashboard: function(d1, g1) { this._call('actualizarFechasDashboard', [d1, g1]); }
-          }
-        }
       };
     }
 
