@@ -1243,7 +1243,9 @@
         if (typeof google !== 'undefined' && google.script && google.script.run) {
             const btn = document.getElementById('btnSincronizar');
             if(btn) btn.innerHTML = "⏳ Actualizando...";
-            google.script.run.withSuccessHandler(function() { sincronizarDatos(); }).withFailureHandler(function(err) { alert("Error al renombrar: " + err); sincronizarDatos(); })
+            google.script.run
+              .withSuccessHandler(function() { sincronizarDatos(); })
+              .withFailureHandler(function(err) { alert("Error al renombrar: " + err); sincronizarDatos(); })
               .renombrarCuadrillaBD(nombreViejo, nombreNuevo, fecha);
         } else { renderizarAgenda(); }
     }
@@ -1457,10 +1459,14 @@
        const rowNum = document.getElementById('form_rownum').value;
        if(!rowNum) return;
        const usuario = safeSession.getItem('nombre_usuario') || safeSession.getItem('sesion_activa');
-       google.script.run
-         .withSuccessHandler(function(res) {
-            if(res.status === 'success') { cerrarModal(); sincronizarDatos(); } else alert("Error: " + res.message);
-         }).eliminarRegistroAgenda(rowNum, usuario);
+       if (typeof google !== 'undefined' && google.script && google.script.run) {
+         google.script.run
+           .withSuccessHandler(function(res) {
+              if(res.status === 'success') { cerrarModal(); sincronizarDatos(); } else alert("Error: " + res.message);
+           })
+           .withFailureHandler(function(err) { alert("Error de conexión al eliminar: " + err); })
+           .eliminarRegistroAgenda(rowNum, usuario);
+       }
     }
 
     function cerrarModal() { document.getElementById('modalRegistro').classList.add('hidden'); }
@@ -1536,7 +1542,10 @@
       
       renderizarAgenda();
       if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run.withFailureHandler(function(err) { alert("Error al mover: " + err); sincronizarDatos(); }).guardarRegistroAgenda(cita);
+          google.script.run
+            .withSuccessHandler(function(res) { if(res && res.status !== 'success') { alert("Error al mover: " + (res.message||'')); sincronizarDatos(); } })
+            .withFailureHandler(function(err) { alert("Error al mover: " + err); sincronizarDatos(); })
+            .guardarRegistroAgenda(cita);
       }
     }
 
@@ -1605,12 +1614,21 @@
       if (btn) btn.innerHTML = "⏳ Sincronizando...";
       document.getElementById('cargandoTablaAdmin').classList.remove('hidden');
       document.getElementById('tablaAdminCompleta').classList.add('hidden');
-      google.script.run.withSuccessHandler(function(response) {
-        if (btn) btn.innerHTML = "🔄 Sincronizar";
-        document.getElementById('cargandoTablaAdmin').classList.add('hidden');
-        document.getElementById('tablaAdminCompleta').classList.remove('hidden');
-        if (response.status === 'success') { baseDatosCompletaAdmin = response; construirTablaFiltrosAdmin(); } else { alert('Fallo: ' + response.message); }
-      }).obtenerTodoContenidoBaseDatos();
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(function(response) {
+            if (btn) btn.innerHTML = "🔄 Sincronizar";
+            document.getElementById('cargandoTablaAdmin').classList.add('hidden');
+            document.getElementById('tablaAdminCompleta').classList.remove('hidden');
+            if (response.status === 'success') { baseDatosCompletaAdmin = response; construirTablaFiltrosAdmin(); } else { alert('Fallo: ' + response.message); }
+          })
+          .withFailureHandler(function(err) {
+            if (btn) btn.innerHTML = "🔄 Sincronizar";
+            document.getElementById('cargandoTablaAdmin').classList.add('hidden');
+            alert("Error al sincronizar base de datos: " + err);
+          })
+          .obtenerTodoContenidoBaseDatos();
+      }
     }
 
     function cerrarVistaGeneralAdmin() { document.getElementById('vistaAdminFiltros').classList.add('hidden'); }
@@ -1721,6 +1739,7 @@
         document.getElementById('cargandoAuditoria').textContent = 'Cargando registros...';
         document.getElementById('tablaAuditoria').classList.add('hidden');
         document.getElementById('totalAuditoria').textContent = '';
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
             .withSuccessHandler(function(datos) {
                 document.getElementById('cargandoAuditoria').classList.add('hidden');
@@ -1761,6 +1780,7 @@
                 document.getElementById('cargandoAuditoria').textContent = 'Error al cargar la auditoría: ' + err;
             })
             .obtenerAuditoriaEliminados();
+        }
     }
 
     function restaurarRegistroAuditoria(auditRowNum, btnEl) {
@@ -1770,7 +1790,8 @@
         btnEl.textContent = 'Restaurando...';
         btnEl.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
         btnEl.classList.add('bg-slate-400');
-        google.script.run
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
             .withSuccessHandler(function(res) {
                 if (res && res.status === 'success') {
                     btnEl.outerHTML = '<span class="text-emerald-600 font-bold text-xs whitespace-nowrap">✅ Restaurado</span>';
@@ -1792,6 +1813,7 @@
                 alert('Error de conexión al restaurar: ' + err);
             })
             .restaurarRegistroAgenda(auditRowNum, usuario);
+        }
     }
 
     function guardarFechasDashboard() {
@@ -1830,23 +1852,25 @@
     function sincronizarDashboard() {
         const btn = document.getElementById('btnSincronizarDashboard');
         if (btn) btn.innerHTML = "⏳ Cargando Datos...";
-        google.script.run.withSuccessHandler(function(res) {
-            if (btn) btn.innerHTML = "🔄 Actualizar Datos";
-            if (res.status === 'success') { 
-                datosDashboardGral = res.data; 
-               
-                 if (res.data.fechas) {
-                    document.getElementById('dashFechaD1').value = res.data.fechas.d1 || '';
-                    document.getElementById('dashFechaG1').value = res.data.fechas.g1 || '';
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(function(res) {
+              if (btn) btn.innerHTML = "🔄 Actualizar Datos";
+              if (res.status === 'success') {
+                datosDashboardGral = res.data;
+                if (res.data.fechas) {
+                  document.getElementById('dashFechaD1').value = res.data.fechas.d1 || '';
+                  document.getElementById('dashFechaG1').value = res.data.fechas.g1 || '';
                 }
-                renderizarDashboardGrid(); 
-            } 
-   
-             else { alert("Error cargando dashboard: " + res.message); }
-        }).withFailureHandler(function(err){
-            if (btn) btn.innerHTML = "🔄 Actualizar Datos";
-            alert("Error de red: " + err);
-        }).obtenerDatosDashboard();
+                renderizarDashboardGrid();
+              } else { alert("Error cargando dashboard: " + res.message); }
+            })
+            .withFailureHandler(function(err) {
+              if (btn) btn.innerHTML = "🔄 Actualizar Datos";
+              alert("Error de red: " + err);
+            })
+            .obtenerDatosDashboard();
+        }
     }
 
     function formateaCelda(val) {
