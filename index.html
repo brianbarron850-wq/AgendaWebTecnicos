@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestor de Agenda Tecnicos</title>
-  <!-- Tailwind CDN (modo desarrollo) — para producción instalar via CLI o usar Play CDN con config -->
-  <script src="https://cdn.tailwindcss.com?v=3"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .slot-card { transition: all 0.2s ease; }
@@ -411,10 +410,7 @@
           <tbody id="tablaAuditoriaBody" class="divide-y divide-slate-100"></tbody>
         </table>
       </div>
-      <div class="mt-4 flex justify-between items-center text-xs font-semibold text-slate-500">
-        <span id="totalAuditoria"></span>
-        <span class="text-slate-400 italic">💡 Solo registros eliminados después de la última actualización pueden restaurarse</span>
-      </div>
+      <div class="mt-4 text-right text-xs font-semibold text-slate-500" id="totalAuditoria"></div>
     </div>
   </div>
 
@@ -476,13 +472,10 @@
               this._onSuccess = null;
               this._onFailure = null;
 
-              // CORS-SAFE: Content-Type text/plain evita preflight OPTIONS.
-              // GAS responde con Access-Control-Allow-Origin:* en las peticiones POST
-              // con redirect:follow para manejar la redirección interna de GAS (302→200).
               const requestBody = JSON.stringify({ func: funcName, args: args });
               const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
               const REINTENTOS_MAX = 3;
-              const ESPERAS_MS = [0, 2000, 4000];
+              const ESPERAS_MS = [0, 1500, 3000]; // FIX E1: reintentos para 404 por redirección POST→GET en GAS
 
               const ejecutar = async () => {
                 for (let i = 0; i < REINTENTOS_MAX; i++) {
@@ -490,64 +483,42 @@
 
                   let res;
                   try {
-                    // FIX CORS: usar mode:'cors' + Content-Type:'text/plain' (simple request, sin preflight)
                     res = await fetch(URL_API_GAS, {
                       method: 'POST',
-                      mode: 'cors',
                       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                       body: requestBody,
                       redirect: 'follow'
                     });
                   } catch (fetchErr) {
-                    // Error de red real (CORS bloqueado, sin conexión, AdBlock, etc.)
+                    // FIX E2: error de red (Failed to fetch) — reintentar si no es el último intento
                     if (i < REINTENTOS_MAX - 1) continue;
                     throw fetchErr;
                   }
 
-                  // GAS puede devolver 404 en la primera petición (redirección POST→GET);
-                  // reintentar hasta agotar intentos.
                   if (!res.ok) {
+                    // FIX E1: error HTTP 404 (redirección POST→GET) — reintentar
                     if (i < REINTENTOS_MAX - 1) continue;
-                    throw new Error("Error HTTP " + res.status + ". Verifica que el despliegue de Apps Script tenga acceso 'Cualquier persona'.");
-                  }
-
-                  // Respuesta opaque (mode:no-cors) no tiene body — nunca debería llegar aquí
-                  // con mode:'cors', pero se guarda por si acaso.
-                  if (res.type === 'opaque') {
-                    if (i < REINTENTOS_MAX - 1) continue;
-                    throw new Error("Respuesta opaca recibida. Verifica que el despliegue de Apps Script tenga acceso 'Cualquier persona'.");
+                    throw new Error("Fallo en la red: " + res.status);
                   }
 
                   const text = await res.text();
 
-                  if (!text || text.trim() === '') {
-                    if (i < REINTENTOS_MAX - 1) continue;
-                    throw new Error("El servidor devolvió una respuesta vacía. Intenta de nuevo.");
-                  }
-
                   if (text.trim().startsWith('<')) {
-                    throw new Error("⚠️ Alerta de Google:\nLa conexión devolvió una página HTML en lugar de datos JSON.\n\nEsto ocurre porque:\n1. Los permisos de la URL en Apps Script no son 'Cualquier persona'\n2. La URL del despliegue es incorrecta\n3. Se excedieron las cuotas de Google");
+                    throw new Error("⚠️ Alerta de Google:\nLa conexión devolvió una página en lugar de datos.\n\nEsto suele pasar porque los permisos de la URL en Apps Script no están en 'Cualquier Persona' o porque excediste las cuotas.");
                   }
 
-                  let data;
-                  try {
-                    data = JSON.parse(text);
-                  } catch(parseErr) {
-                    if (i < REINTENTOS_MAX - 1) continue;
-                    throw new Error("Error al parsear la respuesta JSON: " + parseErr.message);
-                  }
-
+                  const data = JSON.parse(text);
                   if (data && data.error) { if (failureCb) failureCb(data.error); }
-                  else { if (successCb) successCb(data.result !== undefined ? data.result : data); }
-                  return; // Éxito
+                  else { if (successCb) successCb(data.result); }
+                  return; // Éxito — salir del bucle
                 }
               };
 
               ejecutar().catch(err => {
-                console.error("AgendaTecnicos — Error en conexión GAS:", err);
+                console.error("Error en conexión:", err);
                 let errorMsg = err.message || err.toString();
-                if (errorMsg.includes('Failed to fetch') || errorMsg.includes('NetworkError') || errorMsg.includes('Network request failed')) {
-                  errorMsg = "⚠️ Error de conexión:\nNo se pudo contactar al servidor.\n\nPosibles causas:\n• Bloqueador de anuncios activo (AdBlock, uBlock, Brave Shields) — desactívalo para este sitio\n• La URL de la API en el código no es correcta\n• El despliegue de Apps Script no tiene acceso 'Cualquier persona'\n• Sin conexión a Internet";
+                if (errorMsg.includes('Failed to fetch')) {
+                  errorMsg = "Failed to fetch: La petición ha sido bloqueada. Revisa que la URL de la API sea correcta, que la implementación de Apps Script tenga acceso 'Cualquier persona', y que no tengas bloqueadores de anuncios (AdBlock, uBlock, Brave Shields) interfiriendo con la conexión.";
                 }
                 if (failureCb) failureCb(errorMsg);
               });
@@ -562,7 +533,7 @@
             obtenerDatosDashboard: function() { this._call('obtenerDatosDashboard', []); },
             obtenerAuditoriaEliminados: function() { this._call('obtenerAuditoriaEliminados', []); },
             actualizarFechasDashboard: function(d1, g1) { this._call('actualizarFechasDashboard', [d1, g1]); },
-            restaurarRegistroAuditoria: function(auditRowNum, usuario) { this._call('restaurarRegistroAuditoria', [auditRowNum, usuario]); }
+            restaurarRegistroAgenda: function(r, u) { this._call('restaurarRegistroAgenda', [r, u]); }
           }
         }
       };
@@ -582,7 +553,7 @@
     };
     
     const tecnicosPorDefecto = ["Cuadrilla 1", "Cuadrilla 2", "Cuadrilla 3", "Cuadrilla 4", "Euriel", "Ivan", "Ulises", "Jose","Edgar" ];
-    const motivosPorDefecto = ["Instalación", "Soporte", "Cambio de Domicilio", "Desinstalación", "Soporte/Desinstalacion", "Des/Reactivo", "Migracion", "Reactivacion", "CAT" ];
+    const motivosPorDefecto = ["Instalacion", "Soporte", "Cambio de Domicilio", "Desinstalacion", "Soporte/Desinstalacion", "Des/Reactivo", "Migracion", "Reactivacion", "CAT" ];
     const horariosPorDefecto = ["9:00am", "9:30am", "10:00am", "10:30am", "11:00am", "11:30am", "Antes de las 12pm", "12:00pm", "12:30pm","Despues de las 12pm", "1:00pm", "1:30pm", "2:00pm", "2:30pm","Antes de las 3pm", "3:00pm", "3:30pm", "Despues de las 3pm", "4:00pm", "4:30pm", "5:00pm", "5:30pm", "Despues de las 6pm", "Disponibilidad"];
     const agentesPorDefecto = ["Denise", "Jenni", "Luz", "Luis", "Brian", "Fernando", "Laura", "Mario", "Jaime", "Kennya"];
     const coloniasPorDefecto = ["11_Febrero", "2_Octubre", "20 Aniversario", "Acequias De Tabalaopa", "Acuapuerto", "Adolfo Lopez Mateos", "Aeropuerto", "Agricola Francisco Villa", "Aires Del Sur", "Alamedas Rinconada Oriente", "Alamos", "Alamos II", "Alamos ll", "Alamos lll", "Alamos lV", "Alamos lV", "Aldama", "Alfredo Chavez", "Ampleacion Los Huizaches", "Ampleacion Once De Febrero", "Ampliacion Crucero", "Ampliacion Crucero ll", "Ampliacion Diaz Ordaz", "Ampliacion Lomas De Oriente", "Ampliacion Nuevo Triunfo", "Ampliacion Pilares", "Ampliacion Universitaria", "Antiguo Lienzo Charro", "Antorcha Popular", "Aquiles Serdan", "Arroyo Nogales", "Arturo Gamiz", "Atenas", "Atenas lll", "Atenas lV", "Avalos", "Barrio De Londres", "Batalla de Sacramento", "Bella Cumbre", "Bellavista", "Berna Residencial", "Bomberos Estacion Sur", "Bosques", "Bosques Boreales", "Cafetales", "Camino Real", "Camino Real ll", "Camino Real V", "Campesina", "Campestre", "Campestre Las Alamedas", "Campestre Las Alamedas", "Campo Viejo", "Campo Viejo", "Campo Viejo", "Campo Viejo", "Canon Del Venado ll", "Carretera Aldama", "Carretera Chihuahua-Aldama", "Carretera Presa-Chihuahua", "Carrizalillo", "Cataluña Etapa II", "Catania Residencial", "CDP", "Centro", "Cerezos", "Cerrada San Luis", "Cerrada Vista Valencia", "Cerro De La cruz", "Cerro Grande", "Cerro Prieto", "Chihuahua 2000", "Chihuahua 2000 ll", "Chihuahua 2000-94", "Clara Cordova", "Colinas Del Sol", "Colonia Nuevas Delicias", "Colonia Sacramento", "Complejo Industrial Chihuahua", "Constituyentes", "Cordilleras", "Crucero", "Cruz Del Sur", "Cuahutemoc", "Cumbres De Robinson", "Cumbres De Robinson ll", "Cumbres De Sacramento", "Cumbres Del Sur", "Cumbres lll", "Cumbres Unversidad", "Dale", "Del Valle Cerrado", "Del Valle l", "Del Valle ll", "Del Valle, Cerrada Rio Amur", "Del Valle, Cerrada Rio Sena", "Del Valle, Cerrada Rio Uruguay", "Deportistas", "Desarrollo Urbano", "Diamante", "Diaz Ordaz", "Diego Lucero", "Divisadero", "Division Del Norte", "Division Del Norte ( Sauz )", "Dos De Junio", "Ejidal", "Ejido Bellavista", "Ejido Colonia Sacramento", "Ejido Colonia Sacramento", "Ejido La Noria", "Ejido Labor De Terrazas", "Ejido Lindero", "Ejido Nuevo Sacramento", "Ejido Rancheria Juarez", "Ejido Robinson", "Ejido Sacramento", "Ejido San Joaquin", "Ejido Villa Aldama", "El Arbol", "El Charco", "El Fundador", "El Huerto", "El Mimbre", "El Mimbre De Arriba", "El Porvenir", "El Ranchito", "El Refugio", "El Sauz", "Encinillas", "Esperanza", "Felipe Angeles", "Fidel Velazquez", "Flores Magon", "Fraccionamiento El Mineral", "Fraccionamiento Esla", "Fraccionamiento Roma", "Fraccionamiento Versalles", "Francisco Agricola", "Francisco Dominguez", "Francisco R Almada", "Francisco Villa", "Fundadores", "Girasoles", "Girasoles ll", "Girasoles lll", "Las Granjas", "Granjas Campestre Mirador", "Granjas Cerro Grande", "Granjas Chihuahua", "Granjas De Chihuahua", "Granjas Del Sur", "Granjas Del Sur", "Granjas Del Valle", "Granjas Del Valle", "Granjas Del Valle ll", "Granjas Las Torres", "Granjas Los Mezquites", "Granjas Paraiso", "Granjas Sacramento", "Granjas San Joaquin", "Granjas San Luis", "Granjas Santa Elena", "Granjas Santa Maria", "Granjas Santa Maria", "Granjas Villa Juarez l", "Ignacio Rodriguez", "Inalambrica", "Independencia", "Indigo", "Industrial", "Infonavit Insurgentes", "Infonavit Nacional", "Infonavit Saucito", "Insurgentes", "Jardines De Los Eucaliptos", "Jardines De Oriente l", "Jardines De Oriente ll", "Jardines De Oriente lX", "Jardines De Oriente lX", "Jardines De Oriente V", "Jardines De Oriente Vll", "Jardines De Sacramento", "Jardines De San Agustin", "Jardines de San Agustin ll", "Jardines De San Agustin lll", "Jardines Del Sol", "Jardines Los Eucaliptos", "Jorge Barousse", "Josefa Ortiz De Dominguez", "Juan Guereca", "Junta de los Ríos", "La Cima", "La Galera", "La Junta", "La Lluvia", "La Marina", "La Marqueza", "La Mesa", "La minita", "La Mora", "La Noria", "La Pista", "Labor de Terrazas", "Laderas De San Guillermo", "Laderas De San Guillermo ll", "Laderas De San Guillermo lll", "Ladrillera Tarahumara", "Ladrilleras", "Ladrilleros", "Laos Residencial", "Las Alamedas", "Las Aldabas", "Las Aldabas Cerrada Toscana", "Las Cruces", "Las Lunas", "Las Malvinas", "Las Margaritas", "Las Norias", "Las Nuevas Margaritas", "Las Pampas", "Las Pampas ll", "Las Torres", "Las Torres lll", "Las Torres Norte", "Lealtad l", "Lealtad ll", "Linda Vista", "Lomas Altas lll", "Lomas De Montecarlo", "Lomas De Oriente", "Lomas De Oriente - Los Portales", "Lomas Del Sol", "Lomas Karike", "Los Alamos", "Los Alamos Vl", "Los Arcos", "Los Arroyos", "Los Bosques", "Los Encinos De Oriente l", "Los Fresnos", "Los Huertos", "Los Huizaches", "Los Leones lV", "Los Llanos", "Los Naranjos", "Los Nogales", "Los Olivos", "Los Portales", "Los Potreros", "Luis Donaldo Colosio", "Madera 65", "Margarita Maza De Juarez", "Margaritas", "Maria Isabel", "Maria Luisa", "Marmol l", "Marmol ll", "Marmol lll", "Marmol Viejo", "Martin Lopez", "Maseru", "Maseru ll", "Melchor Ocampo", "Mexico", "Mezquite", "Miguel HIdalgo", "Miguel Sigala", "Minerales", "Miramar", "Misael Nunez", "Mision De San Ignacio", "Mision De Sisoguichi", "Molino De Agua", "Monte Bonito", "Monte Carlo ll", "Monte Olivo", "Monte Olivo ll", "Monte Verde", "Monte Xenit", "Monteverde", "Monteverde Cerrada Jardines De Granada", "Montolivo ll", "Montolivo lll", "Multimercado Zarco", "Nogales Ponderosa", "Novena Etapa", "Nueva Vizcaya Residencial", "Nuevas Delicias", "Nuevo Delicias", "Nuevo Milenio", "Nuevo Triunfo", "Obrera", "Pablo Gomez", "Padierna", "Palestina", "Palma Real", "Palma Real V", "Panoramico", "Parque Industrial Aeropuerto", "Parque Industrial Impulso", "Paseo De Las Flores", "Paseo De Los Alamos", "Paseo De Los Leones", "Paseos De Chihuahua", "Paseos De Los Leones", "Paseos De Los Leones V", "Paseos Del Camino Real", "Paseos Del Camino Real lll", "Paseos Del Camino Real lV", "Paseos Del Camino Real V", "Paso Del Norte", "Pavis Borunda", "Pedro Dominguez", "Pena Blanca", "Pensiones", "Plan De Ayala", "Ponce De Leon", "Popular", "Portal Del Real", "Portal Del Real ll", "Portal Del Valle", "Porticos De Bella Cumbre", "Porvenir", "Pozos Del Valle", "Praderas", "Praderas De San Antonio", "Praderas Del Norte", "Praderas Del Sur", "Praderas Del Sur ll", "Praderas Del Sur V", "Prado Sur", "Prado Sur ll", "Privadas Del Sur", "Privadas Del Sur ll", "Privadas Del Sur lll", "Privadas Del Sur V", "Puerta De Alcala", "Puerta De La Ciudad", "Puerta Del Valle", "Puerta Real", "Puerta Savona", "Puerta Savona V", "Punta Esperanza Oriente", "Punta Naranjos", "Punta Naranjos ll", "Punta Naranjos lV", "Punta Oriente", "Punta Oriente ll", "Punta Oriente lll", "Punta Oriente lV", "Punta Oriente V", "Punta Oriente Vl", "Quinta Arboleda", "Quinta Montecarlo", "Quinta San Carlos", "Quinta San Miguel", "Quinta Versalles", "Quinta Villalobos", "Quintas Carolinas", "Quintas Juan Pablo", "Quintas Quijote", "Quintas San Antonio", "Quintas Sebastian", "R. Almada", "Rancheria Juarez", "Rancho Enmedio", "Rancho Guadalupe", "Real Carolinas", "Real De Minas", "Real Plus", "Renovacion", "Residencial Campestre ll", "Residencial Leones", "Residencial Leones ll", "Revolucion", "Riberas De Sacramento", "Riberas De Sacramento ll", "Riberas De Sacramento lV", "Riberas Del Valle", "Ricardo Flores Magon", "Rigoberto Quiroz", "Rinconada De Sierra Azul", "Rinconada Los Nogales", "Rinconada Los Nogales lV", "Rinconada Oriente", "Rinconada Oriente ll", "Rinconada Oriente lll", "Rinconadas La Sierra", "Riscos Del Angel", "Robinson", "Rodolfo Aguilar", "Rodolfo Fierro", "Romance", "Romanzza", "Rosario", "Ruben Jaramillo", "Sacramento", "Salida A Cuauhtemoc", "San Agustin", "San Antonio", "San Felipe", "San Felipe lll", "San Fernando", "San Gabriel", "San Gabriel ll", "San Guillermo", "San Isidro", "San Joaquin", "San Jorge", "San Jose", "San Juan Bautista", "San Lazaro", "San Pedro", "San Rafael", "Santa Elena", "Santa Elena, Aquiles Serdan", "Santa Eulalia", "Santa Isabel", "Santa Maria", "Santa Rosa", "Santo Nino", "Saucito", "Secretaria De La Marina", "Sector 3", "Sector Tres Robinson", "SEP", "Sergio De La Torre", "Sierra Azul", "Sol de Oriente", "Sol De Oriente lll", "Solar Del Valle", "Solar Del Valle ll", "Tabalaopa", "Tahona", "Tarahumara", "Tarahumara Sur", "Terranova", "Tierra Bella", "Tierra y Libertad", "Toribio Ortega", "Torres Del Sur", "Tres Castillos", "Tres De Mayo", "Tres Marias", "Unidad", "Unidad De Esta Ciudad", "Unidad Nacional", "Unidad Proletaria", "Union Antorchista", "UP", "Urbi Villa Del Prado", "Urbi Villas Del Rey", "Valle De La Madrid", "Valle De San Pedro", "Valle De San Pedro ll", "Valle De San Pedro lll", "Valle De San Quintin", "Valle del Sauco", "Valle Del Sauz", "Valle Dorado", "Valle Escondido", "Valle Grande", "Valle Imperial", "Vallecillo", "Valles De Chihuahua", "Valles De San Agustin", "Valles Del Sur", "Vendanova", "Vendanova ll", "Veredas Del Sur", "Veredas Del Sur ll", "Veredas Del Sur lll", "Veteranos", "Via Residencial", "Vias De Sacramento", "Vicente Guereca", "Vientos de Sacramento", "Vilanova", "Vilanova ll", "Villa del real", "Villa Dolores", "Villa Juarez", "Villa Nueva", "Villa San Lorenzo V", "Villa Vieja", "Villas Del Real", "Villas Del Refugio", "Villas del Rey", "Villas Del Rey lll", "Villas Del Rey V", "Villas Del Sur", "Vinedos California", "Vista Hermosa", "Vistas", "Vistas Avalos", "Vistas Cerro Grande", "Vistas De San Guillermo", "Vistas De San Guillermo ll", "Vistas del Norte", "Vistas Del Norte ll", "Vistas Del Norte lll", "Vistas Del Norte lV", "Vistas Del Norte V", "Vistas Del Prado", "Vistas Del Prado ll", "Zootecnia", "Ignacio Allende", "Colinas Del Leon", "Bosques de san Pedro", "Monte Bonito", "Progreso", "Lomas Vallarta", "Sahuaros", "CNOP", "Proyecto Guadalupe Etapa I", "Las Vinas", "Fraccionamiento Laderas", "Nombre De Dios", "Cumbres de robinson IV", "Del Valle Cerrada Rio Niger", "Ejido Chacon", "Alleza Norte", "La Marqueza II", "Localidad Los Leones", "Barrio del Norte", "Guadalupe", "La Villa ( Nuevo Delicias )", "Ojo Del Apache", "Lomeli", "Hidalgo", "Morse", "Arquitos", "Tracia", "Herradero", "Ampleacion Tres De Mayo", "Los Pinos", "La Soledad", "Hacienda San Marcos", "Quinta Real", "Monarca", "La Joya", "Ejido Villa Aldama", "Integracion", "La Haciendita", "Rancho Los Leones", "Paquime", "Ejido Ocampo", "Ejido Estacion Terrazas", "Los Cerezos", "Caminos Del Valle", "Bahias", "Vistas Del Pedregal", "Avicola Y Ganadera Felipe Angeles", "Angel Trias", "Vida Digna", "Rancho Suarez", "Ejido El Fresno", "Ampleacion Ruiz Maseu", "Jardines Del Saucito", "Cumbres Del Eden"];
@@ -1486,16 +1457,10 @@
        const rowNum = document.getElementById('form_rownum').value;
        if(!rowNum) return;
        const usuario = safeSession.getItem('nombre_usuario') || safeSession.getItem('sesion_activa');
-       if (typeof google !== 'undefined' && google.script && google.script.run) {
-         google.script.run
-           .withSuccessHandler(function(res) {
-              if(res.status === 'success') { cerrarModal(); sincronizarDatos(); } else alert("Error: " + res.message);
-           })
-           .withFailureHandler(function(err) { alert("Error al eliminar: " + err); })
-           .eliminarRegistroAgenda(rowNum, usuario);
-       } else {
-         alert("Entorno local detectado. Requiere despliegue de Apps Script.");
-       }
+       google.script.run
+         .withSuccessHandler(function(res) {
+            if(res.status === 'success') { cerrarModal(); sincronizarDatos(); } else alert("Error: " + res.message);
+         }).eliminarRegistroAgenda(rowNum, usuario);
     }
 
     function cerrarModal() { document.getElementById('modalRegistro').classList.add('hidden'); }
@@ -1640,24 +1605,12 @@
       if (btn) btn.innerHTML = "⏳ Sincronizando...";
       document.getElementById('cargandoTablaAdmin').classList.remove('hidden');
       document.getElementById('tablaAdminCompleta').classList.add('hidden');
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(function(response) {
-            if (btn) btn.innerHTML = "🔄 Sincronizar";
-            document.getElementById('cargandoTablaAdmin').classList.add('hidden');
-            document.getElementById('tablaAdminCompleta').classList.remove('hidden');
-            if (response.status === 'success') { baseDatosCompletaAdmin = response; construirTablaFiltrosAdmin(); } else { alert('Fallo: ' + response.message); }
-          })
-          .withFailureHandler(function(err) {
-            if (btn) btn.innerHTML = "🔄 Sincronizar";
-            document.getElementById('cargandoTablaAdmin').classList.add('hidden');
-            alert("Error al cargar datos: " + err);
-          })
-          .obtenerTodoContenidoBaseDatos();
-      } else {
+      google.script.run.withSuccessHandler(function(response) {
         if (btn) btn.innerHTML = "🔄 Sincronizar";
-        alert("Entorno local detectado. Requiere despliegue de Apps Script.");
-      }
+        document.getElementById('cargandoTablaAdmin').classList.add('hidden');
+        document.getElementById('tablaAdminCompleta').classList.remove('hidden');
+        if (response.status === 'success') { baseDatosCompletaAdmin = response; construirTablaFiltrosAdmin(); } else { alert('Fallo: ' + response.message); }
+      }).obtenerTodoContenidoBaseDatos();
     }
 
     function cerrarVistaGeneralAdmin() { document.getElementById('vistaAdminFiltros').classList.add('hidden'); }
@@ -1768,120 +1721,77 @@
         document.getElementById('cargandoAuditoria').textContent = 'Cargando registros...';
         document.getElementById('tablaAuditoria').classList.add('hidden');
         document.getElementById('totalAuditoria').textContent = '';
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-              .withSuccessHandler(function(datos) {
-                  document.getElementById('cargandoAuditoria').classList.add('hidden');
-                  if (!datos || !datos.headers || !datos.rows || datos.rows.length === 0) {
-                      document.getElementById('cargandoAuditoria').textContent = 'No hay registros en la auditoría todavía.';
-                      document.getElementById('cargandoAuditoria').classList.remove('hidden');
-                      return;
-                  }
+        google.script.run
+            .withSuccessHandler(function(datos) {
+                document.getElementById('cargandoAuditoria').classList.add('hidden');
+                if (!datos || !datos.headers || !datos.rows || datos.rows.length === 0) {
+                    document.getElementById('cargandoAuditoria').textContent = 'No hay registros en la auditoría todavía.';
+                    document.getElementById('cargandoAuditoria').classList.remove('hidden');
+                    return;
+                }
+                var thead = document.getElementById('tablaAuditoriaHeader');
+                thead.innerHTML = '<tr>' +
+                    '<th class="px-4 py-3 font-bold text-xs uppercase tracking-wider border-b border-red-100 sticky left-0 bg-red-50 z-10">Acción</th>' +
+                    datos.headers.map(function(h) {
+                        return '<th class="px-4 py-3 font-bold text-xs uppercase tracking-wider border-b border-red-100">' + h + '</th>';
+                    }).join('') +
+                '</tr>';
 
-                  var auditRowNums = datos.auditRowNums || [];
-                  var idxJson    = datos.headers.indexOf('Datos Completos (JSON)');
-                  var idxEstatus = datos.headers.indexOf('Estatus');
-
-                  // Construir headers: ocultar columna JSON, agregar columna Acción al final
-                  var thead = document.getElementById('tablaAuditoriaHeader');
-                  var headerCells = datos.headers.map(function(h, i) {
-                      if (i === idxJson) return ''; // columna oculta
-                      return '<th class="px-4 py-3 font-bold text-xs uppercase tracking-wider border-b border-red-100 whitespace-nowrap">' + h + '</th>';
-                  }).join('');
-                  thead.innerHTML = '<tr>' + headerCells + '<th class="px-4 py-3 font-bold text-xs uppercase tracking-wider border-b border-red-100 text-center">Acción</th></tr>';
-
-                  var tbody = document.getElementById('tablaAuditoriaBody');
-                  tbody.innerHTML = '';
-
-                  datos.rows.forEach(function(row, idx) {
-                      var auditRowNum = auditRowNums[idx] || null;
-                      var estatus = idxEstatus !== -1 ? (row[idxEstatus] || 'Eliminado') : 'Eliminado';
-                      var tieneJson = idxJson !== -1 && row[idxJson] && row[idxJson].trim() !== '';
-                      var yaRestaurado = estatus.trim().toLowerCase() === 'restaurado';
-
-                      var tr = document.createElement('tr');
-                      tr.id = 'audit_row_' + idx;
-                      tr.className = (idx % 2 === 0 ? 'bg-white' : 'bg-red-50/40') + ' hover:bg-red-50 transition-colors';
-
-                      var celdas = row.map(function(cell, ci) {
-                          if (ci === idxJson) return ''; // ocultar JSON crudo
-                          if (ci === idxEstatus) {
-                              var badgeClass = yaRestaurado
-                                  ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                                  : 'bg-red-100 text-red-800 border-red-300';
-                              return '<td class="px-4 py-2 whitespace-nowrap"><span class="text-[11px] font-black uppercase tracking-wider px-2 py-1 rounded border ' + badgeClass + '">' + (cell || 'Eliminado') + '</span></td>';
-                          }
-                          return '<td class="px-4 py-2 text-slate-700 whitespace-nowrap max-w-[180px] truncate" title="' + (cell || '') + '">' + (cell || '-') + '</td>';
-                      }).join('');
-
-                      var btnRestaurar = '';
-                      if (yaRestaurado) {
-                          btnRestaurar = '<button disabled class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed">✅ Restaurado</button>';
-                      } else if (!tieneJson) {
-                          btnRestaurar = '<button disabled title="Este registro fue eliminado antes de la actualización y no tiene datos completos guardados" class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed">Sin datos</button>';
-                      } else {
-                          btnRestaurar = '<button onclick="restaurarDesdeAuditoria(' + auditRowNum + ', ' + idx + ')" class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white border border-emerald-700 transition-colors shadow-sm">↩️ Restaurar</button>';
-                      }
-
-                      tr.innerHTML = celdas + '<td class="px-4 py-2 text-center">' + btnRestaurar + '</td>';
-                      tbody.appendChild(tr);
-                  });
-
-                  document.getElementById('tablaAuditoria').classList.remove('hidden');
-                  document.getElementById('totalAuditoria').textContent = datos.rows.length + ' registro(s) encontrado(s)';
-              })
-              .withFailureHandler(function(err) {
-                  document.getElementById('cargandoAuditoria').classList.remove('hidden');
-                  document.getElementById('cargandoAuditoria').textContent = 'Error al cargar la auditoría: ' + err;
-              })
-              .obtenerAuditoriaEliminados();
-        } else {
-          document.getElementById('cargandoAuditoria').textContent = 'Entorno local detectado. Requiere despliegue de Apps Script.';
-          document.getElementById('cargandoAuditoria').classList.remove('hidden');
-        }
+                var tbody = document.getElementById('tablaAuditoriaBody');
+                tbody.innerHTML = datos.rows.map(function(entry, idx) {
+                    var row = entry.cells;
+                    var auditRowNum = entry.auditRowNum;
+                    // Determinar si ya fue restaurado (columna "Restaurado" en el array si existe)
+                    var yaRestaurado = row.some(function(cell) { return cell && cell.toString().indexOf('✅') === 0; });
+                    var btnRestaurar = yaRestaurado
+                        ? '<span class="text-emerald-600 font-bold text-xs whitespace-nowrap">✅ Restaurado</span>'
+                        : '<button onclick="restaurarRegistroAuditoria(' + auditRowNum + ', this)" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-1 px-3 rounded-lg transition-colors whitespace-nowrap shadow-sm">🔄 Restaurar</button>';
+                    return '<tr class="' + (idx % 2 === 0 ? 'bg-white' : 'bg-red-50/40') + ' hover:bg-red-50 transition-colors">' +
+                        '<td class="px-3 py-2 sticky left-0 ' + (idx % 2 === 0 ? 'bg-white' : 'bg-red-50') + ' z-[1]">' + btnRestaurar + '</td>' +
+                        row.map(function(cell) {
+                            return '<td class="px-4 py-2 text-slate-700 whitespace-nowrap max-w-[220px] overflow-hidden text-ellipsis" title="' + (cell || '') + '">' + (cell || '-') + '</td>';
+                        }).join('') +
+                    '</tr>';
+                }).join('');
+                document.getElementById('tablaAuditoria').classList.remove('hidden');
+                document.getElementById('totalAuditoria').textContent = datos.rows.length + ' registro(s) encontrado(s)';
+            })
+            .withFailureHandler(function(err) {
+                document.getElementById('cargandoAuditoria').classList.remove('hidden');
+                document.getElementById('cargandoAuditoria').textContent = 'Error al cargar la auditoría: ' + err;
+            })
+            .obtenerAuditoriaEliminados();
     }
 
-    function restaurarDesdeAuditoria(auditRowNum, rowIdx) {
-        if (!confirm('¿Estás seguro de que deseas restaurar este registro?\n\nSe agregará de nuevo al final de la hoja Agenda y el estatus en la auditoría cambiará a "Restaurado".')) return;
+    function restaurarRegistroAuditoria(auditRowNum, btnEl) {
+        if (!confirm('¿Estás seguro de que deseas restaurar este registro? Se volverá a agregar a la Agenda como un nuevo registro.')) return;
         var usuario = safeSession.getItem('nombre_usuario') || safeSession.getItem('sesion_activa') || 'Desconocido';
-
-        // Deshabilitar el botón de esta fila mientras se procesa
-        var tr = document.getElementById('audit_row_' + rowIdx);
-        var btn = tr ? tr.querySelector('button') : null;
-        var textoOrig = btn ? btn.innerHTML : '';
-        if (btn) { btn.innerHTML = '⏳...'; btn.disabled = true; }
-
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-            google.script.run
-                .withSuccessHandler(function(res) {
-                    if (res && res.status === 'success') {
-                        // Actualizar visualmente el botón y el badge de estatus sin recargar
-                        if (btn) {
-                            btn.outerHTML = '<button disabled class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed">✅ Restaurado</button>';
-                        }
-                        if (tr) {
-                            var badgeEl = tr.querySelector('span[class*="bg-red-100"]');
-                            if (badgeEl) {
-                                badgeEl.textContent = 'Restaurado';
-                                badgeEl.className = 'text-[11px] font-black uppercase tracking-wider px-2 py-1 rounded border bg-emerald-100 text-emerald-800 border-emerald-300';
-                            }
-                        }
-                        alert('✅ Registro restaurado exitosamente.\n\nYa está disponible nuevamente en la Agenda.');
-                        sincronizarDatos();
-                    } else {
-                        if (btn) { btn.innerHTML = textoOrig; btn.disabled = false; }
-                        alert('Error al restaurar: ' + (res ? res.message : 'Respuesta inválida del servidor'));
-                    }
-                })
-                .withFailureHandler(function(err) {
-                    if (btn) { btn.innerHTML = textoOrig; btn.disabled = false; }
-                    alert('Error de conexión al restaurar: ' + err);
-                })
-                .restaurarRegistroAuditoria(auditRowNum, usuario);
-        } else {
-            if (btn) { btn.innerHTML = textoOrig; btn.disabled = false; }
-            alert('Entorno local detectado. Requiere despliegue de Apps Script.');
-        }
+        btnEl.disabled = true;
+        btnEl.textContent = 'Restaurando...';
+        btnEl.classList.remove('bg-emerald-600', 'hover:bg-emerald-500');
+        btnEl.classList.add('bg-slate-400');
+        google.script.run
+            .withSuccessHandler(function(res) {
+                if (res && res.status === 'success') {
+                    btnEl.outerHTML = '<span class="text-emerald-600 font-bold text-xs whitespace-nowrap">✅ Restaurado</span>';
+                    sincronizarDatos();
+                    alert('✅ Registro restaurado correctamente en la Agenda.');
+                } else {
+                    btnEl.disabled = false;
+                    btnEl.textContent = '🔄 Restaurar';
+                    btnEl.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+                    btnEl.classList.remove('bg-slate-400');
+                    alert('Error al restaurar: ' + (res ? res.message : 'Respuesta vacía'));
+                }
+            })
+            .withFailureHandler(function(err) {
+                btnEl.disabled = false;
+                btnEl.textContent = '🔄 Restaurar';
+                btnEl.classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+                btnEl.classList.remove('bg-slate-400');
+                alert('Error de conexión al restaurar: ' + err);
+            })
+            .restaurarRegistroAgenda(auditRowNum, usuario);
     }
 
     function guardarFechasDashboard() {
@@ -1920,28 +1830,23 @@
     function sincronizarDashboard() {
         const btn = document.getElementById('btnSincronizarDashboard');
         if (btn) btn.innerHTML = "⏳ Cargando Datos...";
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(function(res) {
-              if (btn) btn.innerHTML = "🔄 Actualizar Datos";
-              if (res.status === 'success') { 
-                  datosDashboardGral = res.data; 
-                  if (res.data.fechas) {
-                      document.getElementById('dashFechaD1').value = res.data.fechas.d1 || '';
-                      document.getElementById('dashFechaG1').value = res.data.fechas.g1 || '';
-                  }
-                  renderizarDashboardGrid(); 
-              } else { alert("Error cargando dashboard: " + res.message); }
-            })
-            .withFailureHandler(function(err){
-              if (btn) btn.innerHTML = "🔄 Actualizar Datos";
-              alert("Error de red: " + err);
-            })
-            .obtenerDatosDashboard();
-        } else {
-          if (btn) btn.innerHTML = "🔄 Actualizar Datos";
-          alert("Entorno local detectado. Requiere despliegue de Apps Script.");
-        }
+        google.script.run.withSuccessHandler(function(res) {
+            if (btn) btn.innerHTML = "🔄 Actualizar Datos";
+            if (res.status === 'success') { 
+                datosDashboardGral = res.data; 
+               
+                 if (res.data.fechas) {
+                    document.getElementById('dashFechaD1').value = res.data.fechas.d1 || '';
+                    document.getElementById('dashFechaG1').value = res.data.fechas.g1 || '';
+                }
+                renderizarDashboardGrid(); 
+            } 
+   
+             else { alert("Error cargando dashboard: " + res.message); }
+        }).withFailureHandler(function(err){
+            if (btn) btn.innerHTML = "🔄 Actualizar Datos";
+            alert("Error de red: " + err);
+        }).obtenerDatosDashboard();
     }
 
     function formateaCelda(val) {
