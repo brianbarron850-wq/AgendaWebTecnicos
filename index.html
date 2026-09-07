@@ -475,7 +475,7 @@
               const requestBody = JSON.stringify({ func: funcName, args: args });
               const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
               const REINTENTOS_MAX = 4; // FIX: 4 intentos para absorber redirecciones POST→GET de GAS
-              const ESPERAS_MS = [0, 1500, 3000, 5000]; reintentos para 404 por redirección POST→GET en GAS
+              const ESPERAS_MS = [0, 1500, 3000, 5000];
 
               const ejecutar = async () => {
                 for (let i = 0; i < REINTENTOS_MAX; i++) {
