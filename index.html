@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestor de Agenda Tecnicos</title>
+  <title>Agenda Instaladores — Sistema Operativo</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -474,8 +474,8 @@
 
               const requestBody = JSON.stringify({ func: funcName, args: args });
               const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-              const REINTENTOS_MAX = 3;
-              const ESPERAS_MS = [0, 1500, 3000]; // FIX E1: reintentos para 404 por redirección POST→GET en GAS
+              const REINTENTOS_MAX = 4; // FIX: 4 intentos para absorber redirecciones POST→GET de GAS
+              const ESPERAS_MS = [0, 1500, 3000, 5000]; reintentos para 404 por redirección POST→GET en GAS
 
               const ejecutar = async () => {
                 for (let i = 0; i < REINTENTOS_MAX; i++) {
@@ -518,7 +518,7 @@
                 console.error("Error en conexión:", err);
                 let errorMsg = err.message || err.toString();
                 if (errorMsg.includes('Failed to fetch')) {
-                  errorMsg = "Failed to fetch: La petición ha sido bloqueada. Revisa que la URL de la API sea correcta, que la implementación de Apps Script tenga acceso 'Cualquier persona', y que no tengas bloqueadores de anuncios (AdBlock, uBlock, Brave Shields) interfiriendo con la conexión.";
+                  errorMsg = "Failed to fetch — Petición bloqueada.\n\nPasos para solucionar:\n1. Desactiva AdBlock, uBlock o Brave Shields para este sitio\n2. Verifica que el despliegue tenga acceso \'Cualquier persona\'\n3. Si cambiaste el código, haz una NUEVA versión del despliegue\n4. Conexión inestable: intenta de nuevo";
                 }
                 if (failureCb) failureCb(errorMsg);
               });
@@ -604,6 +604,18 @@
         }).join(' ');
     }
 
+    // FIX: función centralizada para colores de estado WispHub (elimina duplicación)
+    function estadoBadgeClases(estado) {
+      const e = (estado || "Desconocido").toUpperCase();
+      let cls = "text-[11px] uppercase tracking-wider font-black px-2 py-1 rounded-lg border shadow-sm ";
+      if (e === 'ACTIVO' || e === 'INSTALADO')                          cls += 'bg-emerald-100 text-emerald-800 border-emerald-300';
+      else if (e==='SUSPENDIDO'||e==='CORTADO'||e==='MOROSO')           cls += 'bg-rose-100 text-rose-800 border-rose-300';
+      else if (e==='INACTIVO'||e==='DESINSTALADO'||e==='CANCELADO')     cls += 'bg-slate-100 text-slate-800 border-slate-300';
+      else if (e === 'NUEVO' || e === 'PENDIENTE')                      cls += 'bg-blue-100 text-blue-800 border-blue-300';
+      else                                                               cls += 'bg-amber-100 text-amber-800 border-amber-300';
+      return { clase: cls, texto: e };
+    }
+
     window.onload = function() {
       try {
           const hoy = new Date().toISOString().split('T')[0];
@@ -636,6 +648,15 @@
     };
 
     document.addEventListener('dragend', function() { window.isDragging = false; });
+
+    // FIX: cerrar modales con tecla Escape
+    document.addEventListener('keydown', function(e) {
+      if (e.key !== 'Escape') return;
+      if (!document.getElementById('modalRegistro').classList.contains('hidden'))          cerrarModal();
+      else if (!document.getElementById('modalWisphubSeleccion').classList.contains('hidden')) cerrarModalWisphub();
+      else if (!document.getElementById('modalClientesSimilares').classList.contains('hidden')) document.getElementById('modalClientesSimilares').classList.add('hidden');
+      else if (!document.getElementById('modalDetalleDashboard').classList.contains('hidden'))  cerrarModalDashboard();
+    });
 
     function verificarPin() {
       try {
@@ -691,13 +712,10 @@
       document.getElementById('modalLogin').classList.add('hidden');
       document.getElementById('appContenedor').classList.remove('hidden');
       document.getElementById('badgeRol').innerText = rol === 'admin' ? 'Administrador' : 'Técnico';
-      if (rol === 'tecnico') {
-        document.getElementById('panelAdmin').classList.add('hidden');
-        document.querySelectorAll('.admin-only').forEach(function(el) { el.classList.add('hidden') });
-      } else {
-        document.getElementById('panelAdmin').classList.remove('hidden');
-        document.querySelectorAll('.admin-only').forEach(function(el) { el.classList.remove('hidden') });
-      }
+      // FIX: toggle simplificado, una sola rama
+      const esAdmin = (rol !== 'tecnico');
+      document.getElementById('panelAdmin').classList.toggle('hidden', !esAdmin);
+      document.querySelectorAll('.admin-only').forEach(function(el) { el.classList.toggle('hidden', !esAdmin); });
       
       sincronizarDatos();
       iniciarSincronizacionAutomatica();
@@ -740,7 +758,7 @@
              
              if (oldDataStr !== newDataStr) {
                 baseDatosGoogle = datos || [];
-                try { safeStorage.setItem('bDG_v1', JSON.stringify(baseDatosGoogle)); } catch(e) {} // MEJORA: caché de sesión
+                try { safeStorage.setItem('bDG_v1', newDataStr); } catch(e) {} // FIX: usa newDataStr ya calculado
                 baseDatosGoogle.forEach(function(c) {
                     if (c.tecnico) c.tecnico = normalizarTecnico(c.tecnico);
                 });
@@ -822,21 +840,11 @@
       
       const badge = document.getElementById('badge_estado_wisphub');
       const contenedorBadge = document.getElementById('contenedor_estado_wisphub');
-      if(badge && contenedorBadge) {
-          let estado = (data.estado || "Desconocido").toUpperCase();
-          badge.innerText = estado;
-          badge.className = "text-[11px] uppercase tracking-wider font-black px-2 py-1 rounded-lg border shadow-sm";
-          if(estado === 'ACTIVO' || estado === 'INSTALADO') { badge.classList.add('bg-emerald-100', 'text-emerald-800', 'border-emerald-300');
-          } 
-          else if(estado === 'SUSPENDIDO' || estado === 'CORTADO' || estado === 'MOROSO') { badge.classList.add('bg-rose-100', 'text-rose-800', 'border-rose-300');
-          } 
-          else if(estado === 'INACTIVO' || estado === 'DESINSTALADO' || estado === 'CANCELADO') { badge.classList.add('bg-slate-100', 'text-slate-800', 'border-slate-300');
-          } 
-          else if(estado === 'NUEVO' || estado === 'PENDIENTE') { badge.classList.add('bg-blue-100', 'text-blue-800', 'border-blue-300');
-          } 
-          else { badge.classList.add('bg-amber-100', 'text-amber-800', 'border-amber-300');
-          }
-          contenedorBadge.classList.remove('hidden');
+      if (badge && contenedorBadge) {
+        const { clase, texto } = estadoBadgeClases(data.estado); // FIX: usa helper centralizado
+        badge.className = clase;
+        badge.innerText = texto;
+        contenedorBadge.classList.remove('hidden');
       }
     }
 
@@ -905,21 +913,11 @@
         
         const badge = document.getElementById('badge_estado_wisphub');
         const contenedorBadge = document.getElementById('contenedor_estado_wisphub');
-        if(badge && contenedorBadge) {
-            let estado = (data.estado || "Desconocido").toUpperCase();
-            badge.innerText = estado;
-            badge.className = "text-[11px] uppercase tracking-wider font-black px-2 py-1 rounded-lg border shadow-sm";
-            if(estado === 'ACTIVO' || estado === 'INSTALADO') { badge.classList.add('bg-emerald-100', 'text-emerald-800', 'border-emerald-300');
-            } 
-            else if(estado === 'SUSPENDIDO' || estado === 'CORTADO' || estado === 'MOROSO') { badge.classList.add('bg-rose-100', 'text-rose-800', 'border-rose-300');
-            } 
-            else if(estado === 'INACTIVO' || estado === 'DESINSTALADO' || estado === 'CANCELADO') { badge.classList.add('bg-slate-100', 'text-slate-800', 'border-slate-300');
-            } 
-            else if(estado === 'NUEVO' || estado === 'PENDIENTE') { badge.classList.add('bg-blue-100', 'text-blue-800', 'border-blue-300');
-            } 
-            else { badge.classList.add('bg-amber-100', 'text-amber-800', 'border-amber-300');
-            }
-            contenedorBadge.classList.remove('hidden');
+        if (badge && contenedorBadge) {
+          const { clase, texto } = estadoBadgeClases(data.estado); // FIX: helper centralizado
+          badge.className = clase;
+          badge.innerText = texto;
+          contenedorBadge.classList.remove('hidden');
         }
     }
 
@@ -968,7 +966,7 @@
           .withSuccessHandler(function(datos) {
             baseDatosGoogle = datos || [];
             baseDatosGoogle.forEach(function(c) { if (c.tecnico) c.tecnico = normalizarTecnico(c.tecnico); });
-            try { safeStorage.setItem('bDG_v1', JSON.stringify(baseDatosGoogle)); } catch(e) {} // MEJORA: caché de sesión
+            try { safeStorage.setItem('bDG_v1', JSON.stringify(baseDatosGoogle)); } catch(e) {} // FIX: caché para render inmediato en próxima carga
             renderizarAgenda();
             if(btn) btn.innerHTML = "🔄 Sincronizar";
           })
@@ -1313,15 +1311,11 @@
       });
       document.getElementById('modalTitulo').innerText = "Editar Registro - " + cita.nombredelcliente;
       
-      if(rolUsuario === 'admin') {
-          document.getElementById('btnEliminarRegistro').classList.remove('hidden');
-          document.getElementById('btnDuplicarRegistro').classList.remove('hidden'); 
-          desbloquearCamposFormulario();
-      } else {
-          document.getElementById('btnEliminarRegistro').classList.add('hidden');
-          document.getElementById('btnDuplicarRegistro').classList.add('hidden'); 
-          bloquearCamposParaTecnico();
-      }
+      // FIX: toggle unificado para botones de admin
+      const esAdminEdit = (rolUsuario === 'admin');
+      document.getElementById('btnEliminarRegistro').classList.toggle('hidden', !esAdminEdit);
+      document.getElementById('btnDuplicarRegistro').classList.toggle('hidden', !esAdminEdit);
+      esAdminEdit ? desbloquearCamposFormulario() : bloquearCamposParaTecnico();
       
       verificarMotivo();
       document.getElementById('modalRegistro').classList.remove('hidden');
@@ -1362,6 +1356,7 @@
       }
       
       const btn = document.getElementById('btnGuardarRegistro');
+      if (btn.disabled) return; // FIX: prevenir doble-submit
       btn.innerHTML = "Guardando..."; btn.disabled = true;
       
       let citaOriginal = rowNum ? baseDatosGoogle.find(function(c) { return c.rowNum == rowNum; }) : null;
