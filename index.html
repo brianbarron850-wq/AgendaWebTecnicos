@@ -3,17 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Agenda Instaladores — Sistema Operativo</title>
+  <title>Gestor de Agenda Tecnicos</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     .slot-card { transition: all 0.2s ease; }
-    .slot-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+    .slot-card:hover { transform: translateY(-2px); box-shadow: 0 4px 6px -1px rgba(0,0,0,.1); }
     .section-divider { @apply col-span-1 md:col-span-2 border-b border-slate-200 text-xs font-bold text-indigo-600 uppercase tracking-wider pt-2 pb-1 mt-2; }
     .drag-over { @apply bg-indigo-50 border-indigo-400 text-indigo-700 scale-105; }
     .campo-bloqueado { @apply bg-slate-100 text-slate-500 cursor-not-allowed opacity-80; }
   </style>
   <script>
+    // ==========================================
+    // BLOQUEO DE INSPECCIÓN Y CLIC DERECHO
+    // ==========================================
     document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
     document.addEventListener('keydown', function(e) {
       if (e.key === 'F12' || e.keyCode === 123) { e.preventDefault(); return false; }
@@ -30,8 +33,12 @@
     <div class="bg-white p-8 rounded-xl shadow-xl max-w-sm w-full text-center">
       <h2 class="text-2xl font-black mb-2 text-slate-800">Acceso al Sistema</h2>
       <p class="text-sm text-slate-500 mb-6">Ingresa tu contraseña de seguridad para continuar.</p>
-      <input type="password" id="inputPin" onkeyup="if(event.key === 'Enter') verificarPin()" placeholder="••••" class="w-full border border-slate-300 rounded-lg p-3 text-center text-3xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6 font-mono">
-      <button id="btnLogin" onclick="verificarPin()" type="button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">Ingresar</button>
+      <input type="password" id="inputPin" onkeyup="if(event.key==='Enter') verificarPin()" placeholder="••••"
+        class="w-full border border-slate-300 rounded-lg p-3 text-center text-3xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-6 font-mono">
+      <button id="btnLogin" onclick="verificarPin()" type="button"
+        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors">
+        Ingresar
+      </button>
       <p id="msgErrorPin" class="text-rose-600 text-xs font-bold mt-4 hidden"></p>
     </div>
   </div>
@@ -46,8 +53,14 @@
         </p>
       </div>
       <div class="flex items-center gap-3">
-        <button id="btnSincronizar" onclick="sincronizarDatos()" class="bg-black/30 hover:bg-black/40 text-white font-medium text-sm py-2 px-3 rounded-lg transition-colors border border-white/10 flex items-center gap-2">🔄 Sincronizar</button>
-        <button onclick="cerrarSesion()" class="bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm py-2 px-3 rounded-lg transition-colors shadow-sm border border-rose-800">Salir</button>
+        <button id="btnSincronizar" onclick="sincronizarDatos()"
+          class="bg-black/30 hover:bg-black/40 text-white font-medium text-sm py-2 px-3 rounded-lg transition-colors border border-white/10 flex items-center gap-2">
+          🔄 Sincronizar
+        </button>
+        <button onclick="cerrarSesion()"
+          class="bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm py-2 px-3 rounded-lg transition-colors shadow-sm border border-rose-800">
+          Salir
+        </button>
       </div>
     </header>
 
@@ -56,14 +69,28 @@
         <div class="flex items-center gap-4 flex-wrap w-full md:w-auto">
           <div class="flex items-center gap-2">
             <label for="filtroFecha" class="font-semibold text-sm text-slate-700">Filtrar Fecha:</label>
-            <input type="date" id="filtroFecha" onchange="cambioDeFechaFiltro()" class="border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-800">
+            <input type="date" id="filtroFecha" onchange="cambioDeFechaFiltro()"
+              class="border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white text-slate-800">
           </div>
           <div id="panelAdmin" class="flex items-center gap-2 pl-4 border-l border-slate-200 hidden">
-            <input type="text" id="inputNuevaCuadrilla" placeholder="Nombre nueva cuadrilla..." class="border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
-            <button onclick="agregarCuadrillaFecha()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-2 px-3 rounded-lg transition-colors shadow-sm">➕ Añadir</button>
-            <button onclick="abrirVistaGeneralAdmin()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm py-2 px-3 rounded-lg transition-colors shadow-sm ml-2 flex items-center gap-1">📊 Vista General</button>
-            <button onclick="abrirDashboard()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-2 px-3 rounded-lg transition-colors shadow-sm ml-2 flex items-center gap-1">📈 Datos</button>
-            <button onclick="abrirAuditoriaEliminados()" class="bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-2 px-3 rounded-lg transition-colors shadow-sm ml-2 flex items-center gap-1">🗑️ Auditoría</button>
+            <input type="text" id="inputNuevaCuadrilla" placeholder="Nombre nueva cuadrilla..."
+              class="border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
+            <button onclick="agregarCuadrillaFecha()"
+              class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm py-2 px-3 rounded-lg transition-colors shadow-sm">
+              ➕ Añadir
+            </button>
+            <button onclick="abrirVistaGeneralAdmin()"
+              class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm py-2 px-3 rounded-lg transition-colors shadow-sm ml-2 flex items-center gap-1">
+              📊 Vista General
+            </button>
+            <button onclick="abrirDashboard()"
+              class="bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-2 px-3 rounded-lg transition-colors shadow-sm ml-2 flex items-center gap-1">
+              📈 Datos
+            </button>
+            <button onclick="abrirAuditoriaEliminados()"
+              class="bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-2 px-3 rounded-lg transition-colors shadow-sm ml-2 flex items-center gap-1">
+              🗑️ Auditoría
+            </button>
           </div>
         </div>
       </div>
@@ -71,6 +98,7 @@
     </main>
   </div>
 
+  <!-- Modal de registro -->
   <div id="modalRegistro" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[130]">
     <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
       <div class="bg-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0 z-10">
@@ -90,28 +118,28 @@
           <div>
             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
               <span>Técnico Asignado / Cuadrilla</span>
-              <button type="button" onclick="gestionarLista('config_lista_tecnicos', 'Técnico Asignado')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+              <button type="button" onclick="gestionarLista('config_lista_tecnicos','Técnico Asignado')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
             </label>
             <select id="form_tecnico" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required></select>
           </div>
           <div>
             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
               <span>Motivo</span>
-              <button type="button" onclick="gestionarLista('config_lista_motivos', 'Motivo')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+              <button type="button" onclick="gestionarLista('config_lista_motivos','Motivo')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
             </label>
             <select id="form_motivo" onchange="verificarMotivo()" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required></select>
           </div>
           <div>
             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
               <span>Horario</span>
-              <button type="button" onclick="gestionarLista('config_lista_horarios', 'Horarios')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+              <button type="button" onclick="gestionarLista('config_lista_horarios','Horarios')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
             </label>
             <select id="form_horario" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required></select>
           </div>
           <div>
             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
               <span>Agente que Agendó</span>
-              <button type="button" onclick="gestionarLista('config_lista_agentes', 'Agentes')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+              <button type="button" onclick="gestionarLista('config_lista_agentes','Agentes')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
             </label>
             <select id="form_agente" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required></select>
           </div>
@@ -122,7 +150,8 @@
               <div class="flex gap-2 items-center">
                 <input type="text" id="form_id_wisphub" placeholder="ID (Opc.)" class="w-24 border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <input type="text" id="form_nombredelcliente" placeholder="Nombre completo del cliente" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
-                <button type="button" onclick="buscarEnWisphub(event)" title="Buscar en WispHub" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg border border-indigo-600 transition-colors flex items-center justify-center shrink-0 shadow-sm">🔍</button>
+                <button type="button" onclick="buscarEnWisphub(event)" title="Buscar en WispHub"
+                  class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg border border-indigo-600 transition-colors flex items-center justify-center shrink-0 shadow-sm">🔍</button>
                 <div id="contenedor_estado_wisphub" class="hidden flex items-center justify-center shrink-0">
                   <span id="badge_estado_wisphub" class="text-[11px] uppercase tracking-wider font-black px-2 py-1 rounded-lg border shadow-sm"></span>
                 </div>
@@ -132,11 +161,13 @@
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Teléfono</label>
-            <input type="tel" pattern="[0-9]*" oninput="this.value = this.value.replace(/[^0-9]/g, '')" id="form_telefono" placeholder="Ej: 6141234567" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
+            <input type="tel" pattern="[0-9]*" oninput="this.value=this.value.replace(/[^0-9]/g,'')" id="form_telefono" placeholder="Ej: 6141234567"
+              class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required>
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">IP</label>
-            <input type="text" id="form_ip" placeholder="Ej: 192.168.1.1 (Opcional)" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="text" id="form_ip" placeholder="Ej: 192.168.1.1 (Opcional)"
+              class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
           </div>
           <div class="md:col-span-2">
             <label class="block text-xs font-bold text-slate-600 mb-1">Calle y Número</label>
@@ -145,7 +176,7 @@
           <div>
             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
               <span>Colonia ó Fraccionamiento</span>
-              <button type="button" onclick="gestionarLista('config_lista_colonias', 'Colonias')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+              <button type="button" onclick="gestionarLista('config_lista_colonias','Colonias')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
             </label>
             <select id="form_coloniaofracc" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" required></select>
           </div>
@@ -160,7 +191,7 @@
               <input type="text" id="form_calleynumero2" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
             </div>
             <div>
-              <label class="block text-xs font-bold text-slate-600 mb-1">2da Colonia ó Fracc</label>
+              <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1"><span>2da Colonia ó Fracc</span></label>
               <select id="form_coloniaofracc2" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
             </div>
             <div>
@@ -172,14 +203,14 @@
           <div>
             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
               <span>Bienvenida</span>
-              <button type="button" onclick="gestionarLista('config_lista_bienvenida', 'Opciones de Bienvenida')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+              <button type="button" onclick="gestionarLista('config_lista_bienvenida','Opciones de Bienvenida')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
             </label>
             <select id="form_bienvenida" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
           </div>
           <div>
             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
               <span>¿Por qué medio nos conoció?</span>
-              <button type="button" onclick="gestionarLista('config_lista_medios', 'Medios de Contacto')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+              <button type="button" onclick="gestionarLista('config_lista_medios','Medios de Contacto')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
             </label>
             <select id="form_pormediosediocuentadenosotros" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
           </div>
@@ -190,34 +221,35 @@
           <div>
             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
               <span>Plan Contratado</span>
-              <button type="button" onclick="gestionarLista('config_lista_planes', 'Planes')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+              <button type="button" onclick="gestionarLista('config_lista_planes','Planes')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
             </label>
             <select id="form_plan" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
           </div>
           <div>
             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
               <span>Confirmada</span>
-              <button type="button" onclick="gestionarLista('config_lista_confirmada', 'Opciones de Confirmada')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+              <button type="button" onclick="gestionarLista('config_lista_confirmada','Opciones de Confirmada')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
             </label>
             <select id="form_confirmada" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
           </div>
           <div>
             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
               <span>Se realizó</span>
-              <button type="button" onclick="gestionarLista('config_lista_serealizo', 'Opciones de Se realizó')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+              <button type="button" onclick="gestionarLista('config_lista_serealizo','Opciones de Se realizó')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
             </label>
             <select id="form_serealizo" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
           </div>
           <div>
             <label class="flex justify-between items-center block text-xs font-bold text-slate-600 mb-1">
               <span>Ya fue cliente</span>
-              <button type="button" onclick="gestionarLista('config_lista_yafuecliente', 'Opciones de Cliente Histórico')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
+              <button type="button" onclick="gestionarLista('config_lista_yafuecliente','Opciones de Cliente Histórico')" class="admin-only text-indigo-500 hover:text-indigo-800 text-[10px] px-1 bg-indigo-50 rounded hidden">⚙️ Editar</button>
             </label>
             <select id="form_yafuecliente" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Monto ($)</label>
-            <input type="text" id="form_monto" placeholder="Ej: 1500.50" oninput="this.value = this.value.replace(/[^0-9.]/g, '')" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <input type="text" id="form_monto" placeholder="Ej: 1500.50" oninput="this.value=this.value.replace(/[^0-9.]/g,'')"
+              class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
           </div>
           <div class="md:col-span-2">
             <label class="block text-xs font-bold text-slate-600 mb-1">Comentarios Generales</label>
@@ -243,13 +275,16 @@
     </div>
   </div>
 
+  <!-- Modal WispHub selección -->
   <div id="modalWisphubSeleccion" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[110]">
     <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[85vh] flex flex-col">
       <div class="bg-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
         <h3 class="font-black text-lg text-slate-800">Múltiples coincidencias</h3>
         <button type="button" onclick="cerrarModalWisphub()" class="text-slate-400 hover:text-slate-600 text-2xl font-bold p-1 leading-none">×</button>
       </div>
-      <div class="p-4 bg-yellow-50 text-yellow-800 text-xs border-b border-yellow-200">Se encontraron varios clientes que coinciden con tu búsqueda. Por favor selecciona el correcto:</div>
+      <div class="p-4 bg-yellow-50 text-yellow-800 text-xs border-b border-yellow-200">
+        Se encontraron varios clientes que coinciden con tu búsqueda. Por favor selecciona el correcto:
+      </div>
       <div class="px-6 pt-4 pb-2 border-b border-slate-100">
         <input type="text" id="filtroIpWisphub" placeholder="🔍 Buscar o filtrar por IP..." class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50">
       </div>
@@ -257,6 +292,7 @@
     </div>
   </div>
 
+  <!-- Vista general admin -->
   <div id="vistaAdminFiltros" class="hidden fixed inset-0 bg-slate-50 z-[110] overflow-auto flex flex-col">
     <div class="bg-slate-800 text-white px-6 py-4 flex justify-between items-center shadow-md">
       <div>
@@ -280,6 +316,7 @@
     </div>
   </div>
 
+  <!-- Vista dashboard -->
   <div id="vistaDashboardFiltros" class="hidden fixed inset-0 bg-slate-50 z-[110] overflow-auto flex flex-col">
     <div class="bg-indigo-800 text-white px-6 py-4 flex justify-between items-center shadow-md flex-wrap gap-4">
       <div>
@@ -307,6 +344,7 @@
     </div>
   </div>
 
+  <!-- Vista auditoría -->
   <div id="vistaAuditoriaEliminados" class="hidden fixed inset-0 bg-slate-50 z-[110] overflow-auto flex flex-col">
     <div class="bg-red-800 text-white px-6 py-4 flex justify-between items-center shadow-md">
       <div>
@@ -330,6 +368,7 @@
     </div>
   </div>
 
+  <!-- Modal detalle dashboard -->
   <div id="modalDetalleDashboard" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 z-[120]">
     <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden">
       <div class="bg-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center sticky top-0">
@@ -350,6 +389,7 @@
     </div>
   </div>
 
+  <!-- Modal clientes similares WispHub -->
   <div id="modalClientesSimilares" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-[120]">
     <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
       <div class="bg-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
@@ -368,165 +408,175 @@
 
   <script>
     // ==========================================
-    // ADAPTACIÓN API PARA GITHUB PAGES / HOST EXTERNO
+    // API LAYER — ADAPTACIÓN PARA GITHUB PAGES
     // ==========================================
     const URL_API_GAS = "https://script.google.com/macros/s/AKfycbz5SPnLXSRpucrEp1ymTG0g-s0kpvA_fPWNIJMaCknB-r0Rif7nWAx1Z91Enn9_uY8r/exec";
 
     if (typeof google === 'undefined') {
+      // OPTIMIZACIÓN: función _call con AbortController para timeout de 30s,
+      // evita que peticiones colgadas bloqueen la UI indefinidamente
       window.google = {
         script: {
           run: {
-            withSuccessHandler: function(onSuccess) { this._onSuccess = onSuccess; return this; },
-            withFailureHandler: function(onFailure) { this._onFailure = onFailure; return this; },
+            withSuccessHandler: function(fn) { this._ok = fn; return this; },
+            withFailureHandler: function(fn) { this._err = fn; return this; },
             _call: function(funcName, args) {
-              const successCb = this._onSuccess;
-              const failureCb = this._onFailure;
-              this._onSuccess = null;
-              this._onFailure = null;
-              const requestBody = JSON.stringify({ func: funcName, args: args });
-              const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-              const REINTENTOS_MAX = 4;
-              const ESPERAS_MS = [0, 1500, 3000, 5000];
-              const ejecutar = async () => {
-                for (let i = 0; i < REINTENTOS_MAX; i++) {
-                  if (i > 0) await delay(ESPERAS_MS[i]);
+              const ok  = this._ok;
+              const err = this._err;
+              this._ok = this._err = null;
+
+              const body = JSON.stringify({ func: funcName, args: args });
+              const RETRIES = 3;
+              const DELAYS  = [0, 1500, 3000];
+
+              (async () => {
+                for (let i = 0; i < RETRIES; i++) {
+                  if (i > 0) await new Promise(r => setTimeout(r, DELAYS[i]));
+
+                  // OPTIMIZACIÓN: AbortController con timeout 30s por intento
+                  const ctrl = new AbortController();
+                  const tid  = setTimeout(() => ctrl.abort(), 30000);
+
                   let res;
                   try {
-                    res = await fetch(URL_API_GAS, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: requestBody, redirect: 'follow' });
+                    res = await fetch(URL_API_GAS, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                      body,
+                      redirect: 'follow',
+                      signal: ctrl.signal
+                    });
+                    clearTimeout(tid);
                   } catch (fetchErr) {
-                    if (i < REINTENTOS_MAX - 1) continue;
-                    throw fetchErr;
+                    clearTimeout(tid);
+                    if (i < RETRIES - 1) continue;
+                    let msg = fetchErr.message || fetchErr.toString();
+                    if (msg.includes('Failed to fetch') || msg.includes('AbortError')) {
+                      msg = "Failed to fetch: La petición fue bloqueada o tardó demasiado. Verifica que la URL de la API sea correcta, que el despliegue de Apps Script tenga acceso 'Cualquier persona', y que no tengas bloqueadores de anuncios activos.";
+                    }
+                    if (err) err(msg);
+                    return;
                   }
-                  if (!res.ok) { if (i < REINTENTOS_MAX - 1) continue; throw new Error("Fallo en la red: " + res.status); }
+
+                  if (!res.ok) {
+                    if (i < RETRIES - 1) continue;
+                    if (err) err("Fallo en la red: " + res.status);
+                    return;
+                  }
+
                   const text = await res.text();
-                  if (text.trim().startsWith('<')) { throw new Error("⚠️ Alerta de Google:\nLa conexión devolvió una página en lugar de datos.\n\nEsto suele pasar porque los permisos de la URL en Apps Script no están en 'Cualquier Persona' o porque excediste las cuotas."); }
-                  const data = JSON.parse(text);
-                  if (data && data.error) { if (failureCb) failureCb(data.error); }
-                  else { if (successCb) successCb(data.result); }
+                  if (text.trim().startsWith('<')) {
+                    if (err) err("⚠️ Alerta de Google:\nLa conexión devolvió una página HTML en lugar de datos.\n\nVerifica que los permisos de la URL en Apps Script estén en 'Cualquier Persona' o que no hayas excedido las cuotas.");
+                    return;
+                  }
+
+                  // OPTIMIZACIÓN: parsear JSON una sola vez
+                  let data;
+                  try { data = JSON.parse(text); } catch(e) { if (err) err("JSON inválido: " + e.message); return; }
+
+                  if (data && data.error) { if (err) err(data.error); }
+                  else { if (ok) ok(data.result); }
                   return;
                 }
-              };
-              ejecutar().catch(err => {
-                console.error("Error en conexión:", err);
-                let errorMsg = err.message || err.toString();
-                if (errorMsg.includes('Failed to fetch')) { errorMsg = "Failed to fetch — Petición bloqueada.\n\nPasos para solucionar:\n1. Desactiva AdBlock, uBlock o Brave Shields para este sitio\n2. Verifica que el despliegue tenga acceso 'Cualquier persona'\n3. Si cambiaste el código, haz una NUEVA versión del despliegue\n4. Conexión inestable: intenta de nuevo"; }
-                if (failureCb) failureCb(errorMsg);
-              });
+              })().catch(e => { if (err) err(e.message || e.toString()); });
             },
-            validarAutenticacion:         function(pin)        { this._call('validarAutenticacion',         [pin]);        },
-            obtenerDatosAgenda:           function()           { this._call('obtenerDatosAgenda',           []);           },
-            buscarClienteWispHub:         function(n, id)      { this._call('buscarClienteWispHub',         [n, id]);      },
-            guardarRegistroAgenda:        function(d)          { this._call('guardarRegistroAgenda',        [d]);          },
-            eliminarRegistroAgenda:       function(r, u)       { this._call('eliminarRegistroAgenda',       [r, u]);       },
-            renombrarCuadrillaBD:         function(v, n, f)    { this._call('renombrarCuadrillaBD',         [v, n, f]);    },
-            obtenerTodoContenidoBaseDatos:function()           { this._call('obtenerTodoContenidoBaseDatos',[]);           },
-            obtenerDatosDashboard:        function()           { this._call('obtenerDatosDashboard',        []);           },
-            obtenerAuditoriaEliminados:   function()           { this._call('obtenerAuditoriaEliminados',   []);           },
-            actualizarFechasDashboard:    function(d1, g1)     { this._call('actualizarFechasDashboard',    [d1, g1]);     },
-            restaurarRegistroAgenda:      function(r, u)       { this._call('restaurarRegistroAgenda',      [r, u]);       }
+            // Métodos públicos — cada uno delega a _call
+            validarAutenticacion:        function(p)       { this._call('validarAutenticacion',        [p]); },
+            obtenerDatosAgenda:          function()        { this._call('obtenerDatosAgenda',          []); },
+            buscarClienteWispHub:        function(n,id)    { this._call('buscarClienteWispHub',        [n,id]); },
+            guardarRegistroAgenda:       function(d)       { this._call('guardarRegistroAgenda',       [d]); },
+            eliminarRegistroAgenda:      function(r,u)     { this._call('eliminarRegistroAgenda',      [r,u]); },
+            renombrarCuadrillaBD:        function(v,n,f)   { this._call('renombrarCuadrillaBD',        [v,n,f]); },
+            obtenerTodoContenidoBaseDatos:function()       { this._call('obtenerTodoContenidoBaseDatos',[]); },
+            obtenerDatosDashboard:       function()        { this._call('obtenerDatosDashboard',       []); },
+            obtenerAuditoriaEliminados:  function()        { this._call('obtenerAuditoriaEliminados',  []); },
+            actualizarFechasDashboard:   function(d1,g1)   { this._call('actualizarFechasDashboard',   [d1,g1]); },
+            restaurarRegistroAgenda:     function(r,u)     { this._call('restaurarRegistroAgenda',     [r,u]); }
           }
         }
       };
     }
 
     // ==========================================
-    // STORAGE SEGURO
+    // STORAGE HELPERS CON FALLBACK A MEMORIA
     // ==========================================
     const safeStorage = {
-      mem: {},
-      getItem:    function(k)    { try { return localStorage.getItem(k); }        catch(e) { return this.mem[k] || null; } },
-      setItem:    function(k, v) { try { localStorage.setItem(k, v); }            catch(e) { this.mem[k] = v.toString(); } },
-      removeItem: function(k)    { try { localStorage.removeItem(k); }            catch(e) { delete this.mem[k]; } }
+      _mem: {},
+      getItem(k)    { try { return localStorage.getItem(k); }  catch(e) { return this._mem[k]??null; } },
+      setItem(k,v)  { try { localStorage.setItem(k,v); }       catch(e) { this._mem[k]=String(v); } },
+      removeItem(k) { try { localStorage.removeItem(k); }      catch(e) { delete this._mem[k]; } }
     };
     const safeSession = {
-      mem: {},
-      getItem:    function(k)    { try { return sessionStorage.getItem(k); }      catch(e) { return this.mem[k] || null; } },
-      setItem:    function(k, v) { try { sessionStorage.setItem(k, v); }          catch(e) { this.mem[k] = v.toString(); } },
-      removeItem: function(k)    { try { sessionStorage.removeItem(k); }          catch(e) { delete this.mem[k]; } }
+      _mem: {},
+      getItem(k)    { try { return sessionStorage.getItem(k); } catch(e) { return this._mem[k]??null; } },
+      setItem(k,v)  { try { sessionStorage.setItem(k,v); }      catch(e) { this._mem[k]=String(v); } },
+      removeItem(k) { try { sessionStorage.removeItem(k); }     catch(e) { delete this._mem[k]; } }
     };
 
     // ==========================================
-    // DATOS POR DEFECTO
+    // LISTAS POR DEFECTO
     // ==========================================
-    const tecnicosPorDefecto    = ["Cuadrilla 1","Cuadrilla 2","Cuadrilla 3","Cuadrilla 4","Euriel","Ivan","Ulises","Jose","Edgar"];
-    const motivosPorDefecto     = ["Instalacion","Soporte","Cambio de Domicilio","Desinstalacion","Soporte/Desinstalacion","Des/Reactivo","Migracion","Reactivacion","CAT"];
-    const horariosPorDefecto    = ["9:00am","9:30am","10:00am","10:30am","11:00am","11:30am","Antes de las 12pm","12:00pm","12:30pm","Despues de las 12pm","1:00pm","1:30pm","2:00pm","2:30pm","Antes de las 3pm","3:00pm","3:30pm","Despues de las 3pm","4:00pm","4:30pm","5:00pm","5:30pm","Despues de las 6pm","Disponibilidad"];
-    const agentesPorDefecto     = ["Denise","Jenni","Luz","Luis","Brian","Fernando","Laura","Mario","Jaime","Kennya"];
-    const coloniasPorDefecto    = ["11_Febrero","2_Octubre","20 Aniversario","Acequias De Tabalaopa","Acuapuerto","Adolfo Lopez Mateos","Aeropuerto","Agricola Francisco Villa","Aires Del Sur","Alamedas Rinconada Oriente","Alamos","Alamos II","Alamos ll","Alamos lll","Alamos lV","Aldama","Alfredo Chavez","Ampleacion Los Huizaches","Ampleacion Once De Febrero","Ampliacion Crucero","Ampliacion Crucero ll","Ampliacion Diaz Ordaz","Ampliacion Lomas De Oriente","Ampliacion Nuevo Triunfo","Ampliacion Pilares","Ampliacion Universitaria","Antiguo Lienzo Charro","Antorcha Popular","Aquiles Serdan","Arroyo Nogales","Arturo Gamiz","Atenas","Atenas lll","Atenas lV","Avalos","Barrio De Londres","Batalla de Sacramento","Bella Cumbre","Bellavista","Berna Residencial","Bomberos Estacion Sur","Bosques","Bosques Boreales","Cafetales","Camino Real","Camino Real ll","Camino Real V","Campesina","Campestre","Campestre Las Alamedas","Campo Viejo","Canon Del Venado ll","Carretera Aldama","Carretera Chihuahua-Aldama","Carretera Presa-Chihuahua","Carrizalillo","Cataluña Etapa II","Catania Residencial","CDP","Centro","Cerezos","Cerrada San Luis","Cerrada Vista Valencia","Cerro De La cruz","Cerro Grande","Cerro Prieto","Chihuahua 2000","Chihuahua 2000 ll","Chihuahua 2000-94","Clara Cordova","Colinas Del Sol","Colonia Nuevas Delicias","Colonia Sacramento","Complejo Industrial Chihuahua","Constituyentes","Cordilleras","Crucero","Cruz Del Sur","Cuahutemoc","Cumbres De Robinson","Cumbres De Robinson ll","Cumbres De Sacramento","Cumbres Del Sur","Cumbres lll","Cumbres Unversidad","Dale","Del Valle Cerrado","Del Valle l","Del Valle ll","Del Valle, Cerrada Rio Amur","Del Valle, Cerrada Rio Sena","Del Valle, Cerrada Rio Uruguay","Deportistas","Desarrollo Urbano","Diamante","Diaz Ordaz","Diego Lucero","Divisadero","Division Del Norte","Division Del Norte ( Sauz )","Dos De Junio","Ejidal","Ejido Bellavista","Ejido Colonia Sacramento","Ejido La Noria","Ejido Labor De Terrazas","Ejido Lindero","Ejido Nuevo Sacramento","Ejido Rancheria Juarez","Ejido Robinson","Ejido Sacramento","Ejido San Joaquin","Ejido Villa Aldama","El Arbol","El Charco","El Fundador","El Huerto","El Mimbre","El Mimbre De Arriba","El Porvenir","El Ranchito","El Refugio","El Sauz","Encinillas","Esperanza","Felipe Angeles","Fidel Velazquez","Flores Magon","Fraccionamiento El Mineral","Fraccionamiento Esla","Fraccionamiento Roma","Fraccionamiento Versalles","Francisco Agricola","Francisco Dominguez","Francisco R Almada","Francisco Villa","Fundadores","Girasoles","Girasoles ll","Girasoles lll","Las Granjas","Granjas Campestre Mirador","Granjas Cerro Grande","Granjas Chihuahua","Granjas De Chihuahua","Granjas Del Sur","Granjas Del Valle","Granjas Del Valle ll","Granjas Las Torres","Granjas Los Mezquites","Granjas Paraiso","Granjas Sacramento","Granjas San Joaquin","Granjas San Luis","Granjas Santa Elena","Granjas Santa Maria","Granjas Villa Juarez l","Ignacio Rodriguez","Inalambrica","Independencia","Indigo","Industrial","Infonavit Insurgentes","Infonavit Nacional","Infonavit Saucito","Insurgentes","Jardines De Los Eucaliptos","Jardines De Oriente l","Jardines De Oriente ll","Jardines De Oriente lX","Jardines De Oriente V","Jardines De Oriente Vll","Jardines De Sacramento","Jardines De San Agustin","Jardines de San Agustin ll","Jardines De San Agustin lll","Jardines Del Sol","Jardines Los Eucaliptos","Jorge Barousse","Josefa Ortiz De Dominguez","Juan Guereca","Junta de los Ríos","La Cima","La Galera","La Junta","La Lluvia","La Marina","La Marqueza","La Mesa","La minita","La Mora","La Noria","La Pista","Labor de Terrazas","Laderas De San Guillermo","Laderas De San Guillermo ll","Laderas De San Guillermo lll","Ladrillera Tarahumara","Ladrilleras","Ladrilleros","Laos Residencial","Las Alamedas","Las Aldabas","Las Aldabas Cerrada Toscana","Las Cruces","Las Lunas","Las Malvinas","Las Margaritas","Las Norias","Las Nuevas Margaritas","Las Pampas","Las Pampas ll","Las Torres","Las Torres lll","Las Torres Norte","Lealtad l","Lealtad ll","Linda Vista","Lomas Altas lll","Lomas De Montecarlo","Lomas De Oriente","Lomas De Oriente - Los Portales","Lomas Del Sol","Lomas Karike","Los Alamos","Los Alamos Vl","Los Arcos","Los Arroyos","Los Bosques","Los Encinos De Oriente l","Los Fresnos","Los Huertos","Los Huizaches","Los Leones lV","Los Llanos","Los Naranjos","Los Nogales","Los Olivos","Los Portales","Los Potreros","Luis Donaldo Colosio","Madera 65","Margarita Maza De Juarez","Margaritas","Maria Isabel","Maria Luisa","Marmol l","Marmol ll","Marmol lll","Marmol Viejo","Martin Lopez","Maseru","Maseru ll","Melchor Ocampo","Mexico","Mezquite","Miguel HIdalgo","Miguel Sigala","Minerales","Miramar","Misael Nunez","Mision De San Ignacio","Mision De Sisoguichi","Molino De Agua","Monte Bonito","Monte Carlo ll","Monte Olivo","Monte Olivo ll","Monte Verde","Monte Xenit","Monteverde","Monteverde Cerrada Jardines De Granada","Montolivo ll","Montolivo lll","Multimercado Zarco","Nogales Ponderosa","Novena Etapa","Nueva Vizcaya Residencial","Nuevas Delicias","Nuevo Delicias","Nuevo Milenio","Nuevo Triunfo","Obrera","Pablo Gomez","Padierna","Palestina","Palma Real","Palma Real V","Panoramico","Parque Industrial Aeropuerto","Parque Industrial Impulso","Paseo De Las Flores","Paseo De Los Alamos","Paseo De Los Leones","Paseos De Chihuahua","Paseos De Los Leones","Paseos De Los Leones V","Paseos Del Camino Real","Paseos Del Camino Real lll","Paseos Del Camino Real lV","Paseos Del Camino Real V","Paso Del Norte","Pavis Borunda","Pedro Dominguez","Pena Blanca","Pensiones","Plan De Ayala","Ponce De Leon","Popular","Portal Del Real","Portal Del Real ll","Portal Del Valle","Porticos De Bella Cumbre","Porvenir","Pozos Del Valle","Praderas","Praderas De San Antonio","Praderas Del Norte","Praderas Del Sur","Praderas Del Sur ll","Praderas Del Sur V","Prado Sur","Prado Sur ll","Privadas Del Sur","Privadas Del Sur ll","Privadas Del Sur lll","Privadas Del Sur V","Puerta De Alcala","Puerta De La Ciudad","Puerta Del Valle","Puerta Real","Puerta Savona","Puerta Savona V","Punta Esperanza Oriente","Punta Naranjos","Punta Naranjos ll","Punta Naranjos lV","Punta Oriente","Punta Oriente ll","Punta Oriente lll","Punta Oriente lV","Punta Oriente V","Punta Oriente Vl","Quinta Arboleda","Quinta Montecarlo","Quinta San Carlos","Quinta San Miguel","Quinta Versalles","Quinta Villalobos","Quintas Carolinas","Quintas Juan Pablo","Quintas Quijote","Quintas San Antonio","Quintas Sebastian","R. Almada","Rancheria Juarez","Rancho Enmedio","Rancho Guadalupe","Real Carolinas","Real De Minas","Real Plus","Renovacion","Residencial Campestre ll","Residencial Leones","Residencial Leones ll","Revolucion","Riberas De Sacramento","Riberas De Sacramento ll","Riberas De Sacramento lV","Riberas Del Valle","Ricardo Flores Magon","Rigoberto Quiroz","Rinconada De Sierra Azul","Rinconada Los Nogales","Rinconada Los Nogales lV","Rinconada Oriente","Rinconada Oriente ll","Rinconada Oriente lll","Rinconadas La Sierra","Riscos Del Angel","Robinson","Rodolfo Aguilar","Rodolfo Fierro","Romance","Romanzza","Rosario","Ruben Jaramillo","Sacramento","Salida A Cuauhtemoc","San Agustin","San Antonio","San Felipe","San Felipe lll","San Fernando","San Gabriel","San Gabriel ll","San Guillermo","San Isidro","San Joaquin","San Jorge","San Jose","San Juan Bautista","San Lazaro","San Pedro","San Rafael","Santa Elena","Santa Elena, Aquiles Serdan","Santa Eulalia","Santa Isabel","Santa Maria","Santa Rosa","Santo Nino","Saucito","Secretaria De La Marina","Sector 3","Sector Tres Robinson","SEP","Sergio De La Torre","Sierra Azul","Sol de Oriente","Sol De Oriente lll","Solar Del Valle","Solar Del Valle ll","Tabalaopa","Tahona","Tarahumara","Tarahumara Sur","Terranova","Tierra Bella","Tierra y Libertad","Toribio Ortega","Torres Del Sur","Tres Castillos","Tres De Mayo","Tres Marias","Unidad","Unidad De Esta Ciudad","Unidad Nacional","Unidad Proletaria","Union Antorchista","UP","Urbi Villa Del Prado","Urbi Villas Del Rey","Valle De La Madrid","Valle De San Pedro","Valle De San Pedro ll","Valle De San Pedro lll","Valle De San Quintin","Valle del Sauco","Valle Del Sauz","Valle Dorado","Valle Escondido","Valle Grande","Valle Imperial","Vallecillo","Valles De Chihuahua","Valles De San Agustin","Valles Del Sur","Vendanova","Vendanova ll","Veredas Del Sur","Veredas Del Sur ll","Veredas Del Sur lll","Veteranos","Via Residencial","Vias De Sacramento","Vicente Guereca","Vientos de Sacramento","Vilanova","Vilanova ll","Villa del real","Villa Dolores","Villa Juarez","Villa Nueva","Villa San Lorenzo V","Villa Vieja","Villas Del Real","Villas Del Refugio","Villas del Rey","Villas Del Rey lll","Villas Del Rey V","Villas Del Sur","Vinedos California","Vista Hermosa","Vistas","Vistas Avalos","Vistas Cerro Grande","Vistas De San Guillermo","Vistas De San Guillermo ll","Vistas del Norte","Vistas Del Norte ll","Vistas Del Norte lll","Vistas Del Norte lV","Vistas Del Norte V","Vistas Del Prado","Vistas Del Prado ll","Zootecnia","Ignacio Allende","Colinas Del Leon","Bosques de san Pedro","Progreso","Lomas Vallarta","Sahuaros","CNOP","Proyecto Guadalupe Etapa I","Las Vinas","Fraccionamiento Laderas","Nombre De Dios","Cumbres de robinson IV","Del Valle Cerrada Rio Niger","Ejido Chacon","Alleza Norte","La Marqueza II","Localidad Los Leones","Barrio del Norte","Guadalupe","La Villa ( Nuevo Delicias )","Ojo Del Apache","Lomeli","Hidalgo","Morse","Arquitos","Tracia","Herradero","Ampleacion Tres De Mayo","Los Pinos","La Soledad","Hacienda San Marcos","Quinta Real","Monarca","La Joya","Integracion","La Haciendita","Rancho Los Leones","Paquime","Ejido Ocampo","Ejido Estacion Terrazas","Los Cerezos","Caminos Del Valle","Bahias","Vistas Del Pedregal","Avicola Y Ganadera Felipe Angeles","Angel Trias","Vida Digna","Rancho Suarez","Ejido El Fresno","Ampleacion Ruiz Maseu","Jardines Del Saucito","Cumbres Del Eden"];
-    const planesPorDefecto      = ["30mb","50mb","Cortesia","PCCC","PCNCC","CCC","CNCC","Gratis","No aplica"];
-    const confirmadaPorDefecto  = ["No","Si","Mensaje"];
-    const serealizoPorDefecto   = ["Pendiente","Si","No","Reagendar","Reagendo","Cancelo"];
-    const yafueclientePorDefecto= ["No","Si"];
-    const bienvenidaPorDefecto  = ["Si","No","Pendiente"];
-    const mediosPorDefecto      = ["Amigo/Familiar","Facebook","Radio","Es cliente","No contesto","Rotulo","Recomendación","Folleto","Pagina Web","Otros","Volante"];
+    const tecnicosPorDefecto  = ["Cuadrilla 1","Cuadrilla 2","Cuadrilla 3","Cuadrilla 4","Euriel","Ivan","Ulises","Jose","Edgar"];
+    const motivosPorDefecto   = ["Instalacion","Soporte","Cambio de Domicilio","Desinstalacion","Soporte/Desinstalacion","Des/Reactivo","Migracion","Reactivacion","CAT"];
+    const horariosPorDefecto  = ["9:00am","9:30am","10:00am","10:30am","11:00am","11:30am","Antes de las 12pm","12:00pm","12:30pm","Despues de las 12pm","1:00pm","1:30pm","2:00pm","2:30pm","Antes de las 3pm","3:00pm","3:30pm","Despues de las 3pm","4:00pm","4:30pm","5:00pm","5:30pm","Despues de las 6pm","Disponibilidad"];
+    const agentesPorDefecto   = ["Denise","Jenni","Luz","Luis","Brian","Fernando","Laura","Mario","Jaime","Kennya"];
+    const coloniasPorDefecto  = ["11_Febrero","2_Octubre","20 Aniversario","Acequias De Tabalaopa","Acuapuerto","Adolfo Lopez Mateos","Aeropuerto","Agricola Francisco Villa","Aires Del Sur","Alamedas Rinconada Oriente","Alamos","Alamos II","Alamos ll","Alamos lll","Alamos lV","Aldama","Alfredo Chavez","Ampleacion Los Huizaches","Ampleacion Once De Febrero","Ampliacion Crucero","Ampliacion Crucero ll","Ampliacion Diaz Ordaz","Ampliacion Lomas De Oriente","Ampliacion Nuevo Triunfo","Ampliacion Pilares","Ampliacion Universitaria","Antiguo Lienzo Charro","Antorcha Popular","Aquiles Serdan","Arroyo Nogales","Arturo Gamiz","Atenas","Atenas lll","Atenas lV","Avalos","Barrio De Londres","Batalla de Sacramento","Bella Cumbre","Bellavista","Berna Residencial","Bomberos Estacion Sur","Bosques","Bosques Boreales","Cafetales","Camino Real","Camino Real ll","Camino Real V","Campesina","Campestre","Campestre Las Alamedas","Campo Viejo","Canon Del Venado ll","Carretera Aldama","Carretera Chihuahua-Aldama","Carretera Presa-Chihuahua","Carrizalillo","Cataluña Etapa II","Catania Residencial","CDP","Centro","Cerezos","Cerrada San Luis","Cerrada Vista Valencia","Cerro De La cruz","Cerro Grande","Cerro Prieto","Chihuahua 2000","Chihuahua 2000 ll","Chihuahua 2000-94","Clara Cordova","Colinas Del Sol","Colonia Nuevas Delicias","Colonia Sacramento","Complejo Industrial Chihuahua","Constituyentes","Cordilleras","Crucero","Cruz Del Sur","Cuahutemoc","Cumbres De Robinson","Cumbres De Robinson ll","Cumbres De Sacramento","Cumbres Del Sur","Cumbres lll","Cumbres Unversidad","Dale","Del Valle Cerrado","Del Valle l","Del Valle ll","Del Valle, Cerrada Rio Amur","Del Valle, Cerrada Rio Sena","Del Valle, Cerrada Rio Uruguay","Deportistas","Desarrollo Urbano","Diamante","Diaz Ordaz","Diego Lucero","Divisadero","Division Del Norte","Division Del Norte ( Sauz )","Dos De Junio","Ejidal","Ejido Bellavista","Ejido Colonia Sacramento","Ejido La Noria","Ejido Labor De Terrazas","Ejido Lindero","Ejido Nuevo Sacramento","Ejido Rancheria Juarez","Ejido Robinson","Ejido Sacramento","Ejido San Joaquin","Ejido Villa Aldama","El Arbol","El Charco","El Fundador","El Huerto","El Mimbre","El Mimbre De Arriba","El Porvenir","El Ranchito","El Refugio","El Sauz","Encinillas","Esperanza","Felipe Angeles","Fidel Velazquez","Flores Magon","Fraccionamiento El Mineral","Fraccionamiento Esla","Fraccionamiento Roma","Fraccionamiento Versalles","Francisco Agricola","Francisco Dominguez","Francisco R Almada","Francisco Villa","Fundadores","Girasoles","Girasoles ll","Girasoles lll","Las Granjas","Granjas Campestre Mirador","Granjas Cerro Grande","Granjas Chihuahua","Granjas De Chihuahua","Granjas Del Sur","Granjas Del Valle","Granjas Del Valle ll","Granjas Las Torres","Granjas Los Mezquites","Granjas Paraiso","Granjas Sacramento","Granjas San Joaquin","Granjas San Luis","Granjas Santa Elena","Granjas Santa Maria","Granjas Villa Juarez l","Ignacio Rodriguez","Inalambrica","Independencia","Indigo","Industrial","Infonavit Insurgentes","Infonavit Nacional","Infonavit Saucito","Insurgentes","Jardines De Los Eucaliptos","Jardines De Oriente l","Jardines De Oriente ll","Jardines De Oriente lX","Jardines De Oriente V","Jardines De Oriente Vll","Jardines De Sacramento","Jardines De San Agustin","Jardines de San Agustin ll","Jardines De San Agustin lll","Jardines Del Sol","Jardines Los Eucaliptos","Jorge Barousse","Josefa Ortiz De Dominguez","Juan Guereca","Junta de los Ríos","La Cima","La Galera","La Junta","La Lluvia","La Marina","La Marqueza","La Mesa","La minita","La Mora","La Noria","La Pista","Labor de Terrazas","Laderas De San Guillermo","Laderas De San Guillermo ll","Laderas De San Guillermo lll","Ladrillera Tarahumara","Ladrilleras","Ladrilleros","Laos Residencial","Las Alamedas","Las Aldabas","Las Aldabas Cerrada Toscana","Las Cruces","Las Lunas","Las Malvinas","Las Margaritas","Las Norias","Las Nuevas Margaritas","Las Pampas","Las Pampas ll","Las Torres","Las Torres lll","Las Torres Norte","Lealtad l","Lealtad ll","Linda Vista","Lomas Altas lll","Lomas De Montecarlo","Lomas De Oriente","Lomas De Oriente - Los Portales","Lomas Del Sol","Lomas Karike","Los Alamos","Los Alamos Vl","Los Arcos","Los Arroyos","Los Bosques","Los Encinos De Oriente l","Los Fresnos","Los Huertos","Los Huizaches","Los Leones lV","Los Llanos","Los Naranjos","Los Nogales","Los Olivos","Los Portales","Los Potreros","Luis Donaldo Colosio","Madera 65","Margarita Maza De Juarez","Margaritas","Maria Isabel","Maria Luisa","Marmol l","Marmol ll","Marmol lll","Marmol Viejo","Martin Lopez","Maseru","Maseru ll","Melchor Ocampo","Mexico","Mezquite","Miguel HIdalgo","Miguel Sigala","Minerales","Miramar","Misael Nunez","Mision De San Ignacio","Mision De Sisoguichi","Molino De Agua","Monte Bonito","Monte Carlo ll","Monte Olivo","Monte Olivo ll","Monte Verde","Monte Xenit","Monteverde","Monteverde Cerrada Jardines De Granada","Montolivo ll","Montolivo lll","Multimercado Zarco","Nogales Ponderosa","Novena Etapa","Nueva Vizcaya Residencial","Nuevas Delicias","Nuevo Delicias","Nuevo Milenio","Nuevo Triunfo","Obrera","Pablo Gomez","Padierna","Palestina","Palma Real","Palma Real V","Panoramico","Parque Industrial Aeropuerto","Parque Industrial Impulso","Paseo De Las Flores","Paseo De Los Alamos","Paseo De Los Leones","Paseos De Chihuahua","Paseos De Los Leones","Paseos De Los Leones V","Paseos Del Camino Real","Paseos Del Camino Real lll","Paseos Del Camino Real lV","Paseos Del Camino Real V","Paso Del Norte","Pavis Borunda","Pedro Dominguez","Pena Blanca","Pensiones","Plan De Ayala","Ponce De Leon","Popular","Portal Del Real","Portal Del Real ll","Portal Del Valle","Porticos De Bella Cumbre","Porvenir","Pozos Del Valle","Praderas","Praderas De San Antonio","Praderas Del Norte","Praderas Del Sur","Praderas Del Sur ll","Praderas Del Sur V","Prado Sur","Prado Sur ll","Privadas Del Sur","Privadas Del Sur ll","Privadas Del Sur lll","Privadas Del Sur V","Puerta De Alcala","Puerta De La Ciudad","Puerta Del Valle","Puerta Real","Puerta Savona","Puerta Savona V","Punta Esperanza Oriente","Punta Naranjos","Punta Naranjos ll","Punta Naranjos lV","Punta Oriente","Punta Oriente ll","Punta Oriente lll","Punta Oriente lV","Punta Oriente V","Punta Oriente Vl","Quinta Arboleda","Quinta Montecarlo","Quinta San Carlos","Quinta San Miguel","Quinta Versalles","Quinta Villalobos","Quintas Carolinas","Quintas Juan Pablo","Quintas Quijote","Quintas San Antonio","Quintas Sebastian","R. Almada","Rancheria Juarez","Rancho Enmedio","Rancho Guadalupe","Real Carolinas","Real De Minas","Real Plus","Renovacion","Residencial Campestre ll","Residencial Leones","Residencial Leones ll","Revolucion","Riberas De Sacramento","Riberas De Sacramento ll","Riberas De Sacramento lV","Riberas Del Valle","Ricardo Flores Magon","Rigoberto Quiroz","Rinconada De Sierra Azul","Rinconada Los Nogales","Rinconada Los Nogales lV","Rinconada Oriente","Rinconada Oriente ll","Rinconada Oriente lll","Rinconadas La Sierra","Riscos Del Angel","Robinson","Rodolfo Aguilar","Rodolfo Fierro","Romance","Romanzza","Rosario","Ruben Jaramillo","Sacramento","Salida A Cuauhtemoc","San Agustin","San Antonio","San Felipe","San Felipe lll","San Fernando","San Gabriel","San Gabriel ll","San Guillermo","San Isidro","San Joaquin","San Jorge","San Jose","San Juan Bautista","San Lazaro","San Pedro","San Rafael","Santa Elena","Santa Elena, Aquiles Serdan","Santa Eulalia","Santa Isabel","Santa Maria","Santa Rosa","Santo Nino","Saucito","Secretaria De La Marina","Sector 3","Sector Tres Robinson","SEP","Sergio De La Torre","Sierra Azul","Sol de Oriente","Sol De Oriente lll","Solar Del Valle","Solar Del Valle ll","Tabalaopa","Tahona","Tarahumara","Tarahumara Sur","Terranova","Tierra Bella","Tierra y Libertad","Toribio Ortega","Torres Del Sur","Tres Castillos","Tres De Mayo","Tres Marias","Unidad","Unidad De Esta Ciudad","Unidad Nacional","Unidad Proletaria","Union Antorchista","UP","Urbi Villa Del Prado","Urbi Villas Del Rey","Valle De La Madrid","Valle De San Pedro","Valle De San Pedro ll","Valle De San Pedro lll","Valle De San Quintin","Valle del Sauco","Valle Del Sauz","Valle Dorado","Valle Escondido","Valle Grande","Valle Imperial","Vallecillo","Valles De Chihuahua","Valles De San Agustin","Valles Del Sur","Vendanova","Vendanova ll","Veredas Del Sur","Veredas Del Sur ll","Veredas Del Sur lll","Veteranos","Via Residencial","Vias De Sacramento","Vicente Guereca","Vientos de Sacramento","Vilanova","Vilanova ll","Villa del real","Villa Dolores","Villa Juarez","Villa Nueva","Villa San Lorenzo V","Villa Vieja","Villas Del Real","Villas Del Refugio","Villas del Rey","Villas Del Rey lll","Villas Del Rey V","Villas Del Sur","Vinedos California","Vista Hermosa","Vistas","Vistas Avalos","Vistas Cerro Grande","Vistas De San Guillermo","Vistas De San Guillermo ll","Vistas del Norte","Vistas Del Norte ll","Vistas Del Norte lll","Vistas Del Norte lV","Vistas Del Norte V","Vistas Del Prado","Vistas Del Prado ll","Zootecnia","Ignacio Allende","Colinas Del Leon","Bosques de san Pedro","Progreso","Lomas Vallarta","Sahuaros","CNOP","Proyecto Guadalupe Etapa I","Las Vinas","Fraccionamiento Laderas","Nombre De Dios","Cumbres de robinson IV","Del Valle Cerrada Rio Niger","Ejido Chacon","Alleza Norte","La Marqueza II","Localidad Los Leones","Barrio del Norte","Guadalupe","La Villa ( Nuevo Delicias )","Ojo Del Apache","Lomeli","Hidalgo","Morse","Arquitos","Tracia","Herradero","Ampleacion Tres De Mayo","Los Pinos","La Soledad","Hacienda San Marcos","Quinta Real","Monarca","La Joya","Integracion","La Haciendita","Rancho Los Leones","Paquime","Ejido Ocampo","Ejido Estacion Terrazas","Los Cerezos","Caminos Del Valle","Bahias","Vistas Del Pedregal","Avicola Y Ganadera Felipe Angeles","Angel Trias","Vida Digna","Rancho Suarez","Ejido El Fresno","Ampleacion Ruiz Maseu","Jardines Del Saucito","Cumbres Del Eden"];
+    const planesPorDefecto    = ["30mb","50mb","Cortesia","PCCC","PCNCC","CCC","CNCC","Gratis","No aplica"];
+    const confirmadaPorDefecto= ["No","Si","Mensaje"];
+    const serealizoPorDefecto = ["Pendiente","Si","No","Reagendar","Reagendo","Cancelo"];
+    const yafueclientePorDefecto=["No","Si"];
+    const bienvenidaPorDefecto= ["Si","No","Pendiente"];
+    const mediosPorDefecto    = ["Amigo/Familiar","Facebook","Radio","Es cliente","No contesto","Rotulo","Recomendación","Folleto","Pagina Web","Otros","Volante"];
 
     const camposPermitidosTecnico = ['form_ip','form_coordenadasoentrecalles','form_serealizo','form_monto','form_comentariosdeltecnico'];
 
+    // ==========================================
+    // ESTADO GLOBAL
+    // ==========================================
     let baseDatosGoogle = [];
-    try { var _bC = safeStorage.getItem('bDG_v1'); if(_bC) { baseDatosGoogle = JSON.parse(_bC); } } catch(e) {}
+    // OPTIMIZACIÓN: restaurar datos desde localStorage para render inmediato (sin esperar a Sheets)
+    try { const _c = safeStorage.getItem('bDG_v2'); if(_c) baseDatosGoogle = JSON.parse(_c); } catch(e) {}
+
     let espaciosPorFecha = {};
     let rolUsuario       = null;
     let autoSyncInterval = null;
     window.isDragging    = false;
 
-    // ==========================================
-    // OPT: MAPA DE ESTADO → COLORES/BADGES
-    // Reemplaza cadena de 9 if/else por lookup O(1)
-    // ==========================================
-    const _STATUS_CLASSES = {
-      'sí':       { color:'border-emerald-500 bg-emerald-50 hover:bg-emerald-100 text-emerald-900', badge:'Realizado',    bg:'bg-emerald-500', margin:'mt-5' },
-      'si':       { color:'border-emerald-500 bg-emerald-50 hover:bg-emerald-100 text-emerald-900', badge:'Realizado',    bg:'bg-emerald-500', margin:'mt-5' },
-      'no':       { color:'border-rose-400 bg-rose-50 hover:bg-rose-100 text-rose-900',             badge:'No Realizado', bg:'bg-rose-400',    margin:'mt-5' },
-      'pendiente':{ color:'border-slate-400 bg-slate-100 hover:bg-slate-200 text-slate-800',        badge:'Pendiente',    bg:'bg-slate-500',   margin:'mt-5' },
-      'cancelado':{ color:'border-red-600 bg-red-100 hover:bg-red-200 text-red-900',                badge:'Cancelado',    bg:'bg-red-600',     margin:'mt-5' },
-      'cancelo':  { color:'border-red-600 bg-red-100 hover:bg-red-200 text-red-900',                badge:'Cancelado',    bg:'bg-red-600',     margin:'mt-5' },
-      'reagendar':{ color:'border-orange-500 bg-orange-50 hover:bg-orange-100 text-orange-900',     badge:'Reagendar',   bg:'bg-orange-500',  margin:'mt-5' },
-      'reagendo': { color:'border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-900',             badge:'Reagendo',    bg:'bg-blue-500',    margin:'mt-5' }
-    };
+    // OPTIMIZACIÓN: índice de búsqueda rápida por rowNum — evita .find() O(n) en render
+    let _idxPorRowNum = {};  // { rowNum: cita }
 
-    // OPT: debounce genérico — evita reejecución de filtros en cada tecla
-    function _debounce(fn, delay) {
-      var t;
-      return function() {
-        var a = arguments;
-        clearTimeout(t);
-        t = setTimeout(function() { fn.apply(null, a); }, delay);
-      };
-    }
-
-    // Cache de elementos de filtro (se reconstruye en construirTablaFiltrosAdmin)
-    var _cachedFilterData = null;
+    // OPTIMIZACIÓN: versión hash de baseDatosGoogle para comparación rápida en sync silencioso
+    let _hashDatos = '';
 
     const configTablas = {
-      tabla1:  { titulo:"Instalaciones",                    tipo:"bar",  labelsCol:true },
-      tabla2:  { titulo:"Paquetes",                         tipo:"bar",  labelsCol:true },
-      tabla3:  { titulo:"¿Por qué medio se dio cuenta de nosotros?", tipo:"pie", labelsCol:true },
-      tabla4:  { titulo:"Soportes",                         tipo:"bar",  labelsCol:true },
-      tabla5:  { titulo:"Motivos de soportes",              tipo:"bar",  labelsCol:true },
-      tabla6:  { titulo:"Cambio de domicilio",              tipo:"bar",  labelsCol:true },
-      tabla7:  { titulo:"Desinstalaciones",                 tipo:"bar",  labelsCol:true },
-      tabla8:  { titulo:"Estatus cliente desinstalaciones", tipo:"bar",  esColumnar:true, colLabel:"Motivo", colsData:["Agendado","Realizado"] },
-      tabla9:  { titulo:"Motivo desinstalación",            tipo:"bar",  labelsCol:true },
-      tabla10: { titulo:"Desinstalaciones año contratado",  tipo:"line", labelsCol:true }
+      tabla1:  { titulo:"Instalaciones",                       tipo:"bar",   labelsCol:true },
+      tabla2:  { titulo:"Paquetes",                            tipo:"bar",   labelsCol:true },
+      tabla3:  { titulo:"¿Por qué medio se dio cuenta de nosotros?", tipo:"pie",labelsCol:true },
+      tabla4:  { titulo:"Soportes",                            tipo:"bar",   labelsCol:true },
+      tabla5:  { titulo:"Motivos de soportes",                 tipo:"bar",   labelsCol:true },
+      tabla6:  { titulo:"Cambio de domicilio",                 tipo:"bar",   labelsCol:true },
+      tabla7:  { titulo:"Desinstalaciones",                    tipo:"bar",   labelsCol:true },
+      tabla8:  { titulo:"Estatus cliente desinstalaciones",    tipo:"bar",   esColumnar:true, colLabel:"Motivo", colsData:["Agendado","Realizado"] },
+      tabla9:  { titulo:"Motivo desinstalación",               tipo:"bar",   labelsCol:true },
+      tabla10: { titulo:"Desinstalaciones año contratado",     tipo:"line",  labelsCol:true }
     };
 
     let datosDashboardGral = null;
     let chartInstance      = null;
 
+    // OPTIMIZACIÓN: horarios normalizados como Set para búsqueda O(1) en sort
+    const _horariosLow   = horariosPorDefecto.map(h => h.toLowerCase());
+    const _horariosIdxMap = Object.fromEntries(_horariosLow.map((h,i) => [h,i]));
+
     function normalizarTecnico(texto) {
       if (!texto) return "";
-      return texto.toString().trim().toLowerCase().split(/\s+/).map(function(w){ return w.charAt(0).toUpperCase()+w.slice(1); }).join(' ');
+      return texto.toString().trim().toLowerCase().split(/\s+/).map(w => w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
     }
 
-    function estadoBadgeClases(estado) {
-      const e = (estado || "Desconocido").toUpperCase();
-      let cls = "text-[11px] uppercase tracking-wider font-black px-2 py-1 rounded-lg border shadow-sm ";
-      if      (e==='ACTIVO'||e==='INSTALADO')                         cls+='bg-emerald-100 text-emerald-800 border-emerald-300';
-      else if (e==='SUSPENDIDO'||e==='CORTADO'||e==='MOROSO')         cls+='bg-rose-100 text-rose-800 border-rose-300';
-      else if (e==='INACTIVO'||e==='DESINSTALADO'||e==='CANCELADO')   cls+='bg-slate-100 text-slate-800 border-slate-300';
-      else if (e==='NUEVO'||e==='PENDIENTE')                          cls+='bg-blue-100 text-blue-800 border-blue-300';
-      else                                                             cls+='bg-amber-100 text-amber-800 border-amber-300';
-      return { clase:cls, texto:e };
+    // OPTIMIZACIÓN: reconstruir índice de búsqueda cada vez que cambian los datos
+    function _reconstruirIndice() {
+      _idxPorRowNum = {};
+      baseDatosGoogle.forEach(c => { _idxPorRowNum[c.rowNum] = c; });
     }
 
     window.onload = function() {
@@ -534,76 +584,80 @@
         const hoy = new Date().toISOString().split('T')[0];
         document.getElementById('filtroFecha').value = hoy;
 
-        // OPT: inicializar todos los defaults en un solo bloque
-        const _defaults = {
-          'config_lista_tecnicos': tecnicosPorDefecto, 'config_lista_motivos': motivosPorDefecto,
-          'config_lista_horarios': horariosPorDefecto, 'config_lista_agentes': agentesPorDefecto,
-          'config_lista_colonias': coloniasPorDefecto, 'config_lista_planes':  planesPorDefecto,
-          'config_lista_confirmada': confirmadaPorDefecto, 'config_lista_serealizo': serealizoPorDefecto,
-          'config_lista_yafuecliente': yafueclientePorDefecto, 'config_lista_bienvenida': bienvenidaPorDefecto,
-          'config_lista_medios': mediosPorDefecto
+        // OPTIMIZACIÓN: inicializar localStorage solo si está vacío (evitar JSON.parse innecesario)
+        const defaults = {
+          'config_lista_tecnicos':  tecnicosPorDefecto,
+          'config_lista_motivos':   motivosPorDefecto,
+          'config_lista_horarios':  horariosPorDefecto,
+          'config_lista_agentes':   agentesPorDefecto,
+          'config_lista_colonias':  coloniasPorDefecto,
+          'config_lista_planes':    planesPorDefecto,
+          'config_lista_confirmada':confirmadaPorDefecto,
+          'config_lista_serealizo': serealizoPorDefecto,
+          'config_lista_yafuecliente':yafueclientePorDefecto,
+          'config_lista_bienvenida':bienvenidaPorDefecto,
+          'config_lista_medios':    mediosPorDefecto
         };
-        Object.keys(_defaults).forEach(function(k) {
-          if (!safeStorage.getItem(k)) safeStorage.setItem(k, JSON.stringify(_defaults[k]));
-        });
+        Object.entries(defaults).forEach(([k,v]) => { if (!safeStorage.getItem(k)) safeStorage.setItem(k, JSON.stringify(v)); });
 
-        let cached = safeStorage.getItem('espacios_por_fecha_v4');
-        if(cached) espaciosPorFecha = JSON.parse(cached);
+        const cached = safeStorage.getItem('espacios_por_fecha_v4');
+        if (cached) espaciosPorFecha = JSON.parse(cached);
+
         poblarSelects();
+
+        // OPTIMIZACIÓN: si hay datos en caché, renderizar inmediatamente antes de sincronizar
+        if (baseDatosGoogle.length > 0) {
+          _reconstruirIndice();
+          baseDatosGoogle.forEach(c => { if(c.tecnico) c.tecnico = normalizarTecnico(c.tecnico); });
+        }
 
         const sesionGuardada = safeSession.getItem('sesion_activa');
         if (sesionGuardada) { iniciarAppConRol(sesionGuardada); }
-      } catch (errorFalla) {
+      } catch(e) {
         const m = document.getElementById('msgErrorPin');
-        if (m) { m.innerText = "Error inicializando la app: " + errorFalla.message; m.classList.remove('hidden'); }
+        if(m) { m.innerText = "Error inicializando la app: " + e.message; m.classList.remove('hidden'); }
       }
     };
 
-    document.addEventListener('dragend', function() { window.isDragging = false; });
-
-    document.addEventListener('keydown', function(e) {
-      if (e.key !== 'Escape') return;
-      if (!document.getElementById('modalRegistro').classList.contains('hidden'))                cerrarModal();
-      else if (!document.getElementById('modalWisphubSeleccion').classList.contains('hidden'))   cerrarModalWisphub();
-      else if (!document.getElementById('modalClientesSimilares').classList.contains('hidden'))  document.getElementById('modalClientesSimilares').classList.add('hidden');
-      else if (!document.getElementById('modalDetalleDashboard').classList.contains('hidden'))   cerrarModalDashboard();
-    });
+    document.addEventListener('dragend', () => { window.isDragging = false; });
 
     function verificarPin() {
       try {
-        const pinInput = document.getElementById('inputPin');
-        const pin      = pinInput.value.trim();
-        const btn      = document.getElementById('btnLogin');
-        const msgError = document.getElementById('msgErrorPin');
-        if(!pin) return;
+        const pin = document.getElementById('inputPin').value.trim();
+        if (!pin) return;
+        const btn = document.getElementById('btnLogin');
+        const msg = document.getElementById('msgErrorPin');
         btn.innerHTML = "⏳ Verificando..."; btn.disabled = true;
-        msgError.classList.add('hidden'); msgError.innerText = "";
+        msg.classList.add('hidden'); msg.innerText = "";
+
         if (typeof google !== 'undefined' && google.script && google.script.run) {
           google.script.run
-            .withSuccessHandler(function(res) {
+            .withSuccessHandler(res => {
               if (res && res.status === 'success') {
                 safeSession.setItem('sesion_activa', res.role);
                 if (res.nombre) safeSession.setItem('nombre_usuario', res.nombre);
                 iniciarAppConRol(res.role);
               } else {
-                msgError.innerText = (res && res.message) ? res.message : "Credenciales no válidas.";
-                msgError.classList.remove('hidden'); btn.innerHTML = "Ingresar"; btn.disabled = false;
+                msg.innerText = (res && res.message) ? res.message : "Credenciales no válidas.";
+                msg.classList.remove('hidden');
+                btn.innerHTML = "Ingresar"; btn.disabled = false;
               }
             })
-            .withFailureHandler(function(err) {
-              msgError.innerText = "Error del sistema: " + (err.message || err);
-              msgError.classList.remove('hidden'); btn.innerHTML = "Ingresar"; btn.disabled = false;
+            .withFailureHandler(err => {
+              msg.innerText = "Error del sistema: " + (err.message || err);
+              msg.classList.remove('hidden');
+              btn.innerHTML = "Ingresar"; btn.disabled = false;
             })
             .validarAutenticacion(pin);
         } else {
-          msgError.innerText = "Entorno no válido. Usa Google Apps Script.";
-          msgError.classList.remove('hidden'); btn.innerHTML = "Ingresar"; btn.disabled = false;
+          msg.innerText = "Entorno no válido."; msg.classList.remove('hidden');
+          btn.innerHTML = "Ingresar"; btn.disabled = false;
         }
-      } catch (e) {
+      } catch(e) {
         const err = document.getElementById('msgErrorPin');
-        if (err) { err.innerText = "Error local: " + e.message; err.classList.remove('hidden'); }
-        document.getElementById('btnLogin').innerHTML = "Ingresar";
-        document.getElementById('btnLogin').disabled  = false;
+        if(err) { err.innerText="Error local: "+e.message; err.classList.remove('hidden'); }
+        const btn = document.getElementById('btnLogin');
+        btn.innerHTML = "Ingresar"; btn.disabled = false;
       }
     }
 
@@ -611,98 +665,124 @@
       rolUsuario = rol;
       document.getElementById('modalLogin').classList.add('hidden');
       document.getElementById('appContenedor').classList.remove('hidden');
-      document.getElementById('badgeRol').innerText = rol === 'admin' ? 'Administrador' : 'Técnico';
-      const esAdmin = (rol !== 'tecnico');
+      document.getElementById('badgeRol').innerText = rol==='admin' ? 'Administrador' : 'Técnico';
+      const esAdmin = rol === 'admin';
       document.getElementById('panelAdmin').classList.toggle('hidden', !esAdmin);
-      document.querySelectorAll('.admin-only').forEach(function(el) { el.classList.toggle('hidden', !esAdmin); });
+      document.querySelectorAll('.admin-only').forEach(el => el.classList.toggle('hidden', !esAdmin));
       sincronizarDatos();
       iniciarSincronizacionAutomatica();
     }
 
     function cerrarSesion() {
-      safeSession.removeItem('sesion_activa');
-      safeSession.removeItem('nombre_usuario');
+      safeSession.removeItem('sesion_activa'); safeSession.removeItem('nombre_usuario');
       rolUsuario = null;
       if (autoSyncInterval) clearInterval(autoSyncInterval);
       document.getElementById('inputPin').value = '';
       document.getElementById('appContenedor').classList.add('hidden');
       document.getElementById('modalLogin').classList.remove('hidden');
-      const btn = document.getElementById('btnLogin');
-      btn.innerHTML = "Ingresar"; btn.disabled = false;
+      const btn = document.getElementById('btnLogin'); btn.innerHTML="Ingresar"; btn.disabled=false;
     }
 
     function iniciarSincronizacionAutomatica() {
-      if(autoSyncInterval) clearInterval(autoSyncInterval);
-      autoSyncInterval = setInterval(function() {
-        if (document.visibilityState === 'visible') { sincronizarDatosSilencioso(); }
+      if (autoSyncInterval) clearInterval(autoSyncInterval);
+      autoSyncInterval = setInterval(() => {
+        if (document.visibilityState === 'visible') sincronizarDatosSilencioso();
       }, 60000);
     }
 
     function sincronizarDatosSilencioso() {
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(function(datos) {
-            if (!datos) return;
-            let newDataStr = JSON.stringify(datos);
-            if (newDataStr === JSON.stringify(baseDatosGoogle)) return;
-            baseDatosGoogle = datos;
-            baseDatosGoogle.forEach(function(c) { if (c.tecnico) c.tecnico = normalizarTecnico(c.tecnico); });
-            try { safeStorage.setItem('bDG_v1', newDataStr); } catch(e) {}
-            if (!document.getElementById('modalRegistro').classList.contains('hidden')) return;
-            if (!document.getElementById('modalWisphubSeleccion').classList.contains('hidden')) return;
-            if (window.isDragging) return;
-            renderizarAgenda();
-          })
-          .obtenerDatosAgenda();
-      }
+      if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+      google.script.run
+        .withSuccessHandler(datos => {
+          if (!datos) return;
+          // OPTIMIZACIÓN: comparación de hash en lugar de JSON.stringify completo
+          const newHash = datos.length + '_' + (datos[0] ? datos[0].rowNum : '') + '_' + (datos[datos.length-1] ? datos[datos.length-1].rowNum : '');
+          if (newHash === _hashDatos) return; // sin cambios — salir rápido
+          _hashDatos = newHash;
+
+          baseDatosGoogle = datos;
+          baseDatosGoogle.forEach(c => { if(c.tecnico) c.tecnico = normalizarTecnico(c.tecnico); });
+          _reconstruirIndice();
+          try { safeStorage.setItem('bDG_v2', JSON.stringify(baseDatosGoogle)); } catch(e) {}
+
+          const modalAbierto = !document.getElementById('modalRegistro').classList.contains('hidden');
+          const wispAbierto  = !document.getElementById('modalWisphubSeleccion').classList.contains('hidden');
+          if (!modalAbierto && !wispAbierto && !window.isDragging) renderizarAgenda();
+        })
+        .obtenerDatosAgenda();
     }
 
     function verificarMotivo() {
-      var motivo = document.getElementById('form_motivo').value.toLowerCase();
+      const motivo = document.getElementById('form_motivo').value.toLowerCase();
       document.getElementById('contenedor_cambio_domicilio').classList.toggle('hidden', motivo !== 'cambio de domicilio');
     }
 
     let clientesTemporalesWisphub = [];
     function buscarEnWisphub(ev) {
       if (ev) ev.preventDefault();
-      const nombreInput = document.getElementById('form_nombredelcliente').value.trim();
-      const idInput     = (document.getElementById('form_id_wisphub') || {value:""}).value.trim();
-      if (nombreInput === "" && idInput === "") { alert("Por favor, ingresa el Nombre o el ID del cliente para buscar en WispHub."); return; }
+      const nombre = document.getElementById('form_nombredelcliente').value.trim();
+      const idEl   = document.getElementById('form_id_wisphub');
+      const id     = idEl ? idEl.value.trim() : "";
+      if (!nombre && !id) { alert("Por favor, ingresa el Nombre o el ID del cliente para buscar en WispHub."); return; }
+
       const btn = ev.currentTarget || document.querySelector('button[title="Buscar en WispHub"]');
-      const originalText = btn.innerHTML;
-      btn.innerHTML = "⏳"; btn.disabled = true;
+      const orig = btn.innerHTML; btn.innerHTML="⏳"; btn.disabled=true;
+
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         google.script.run
-          .withSuccessHandler(function(res) {
-            btn.innerHTML = originalText; btn.disabled = false;
-            if (res.status === 'success')   { llenarCamposClienteWisp(res.data); alert("Datos del cliente encontrados y cargados exitosamente."); }
-            else if (res.status === 'multiple') { mostrarModalSimilares(res.similares); }
+          .withSuccessHandler(res => {
+            btn.innerHTML=orig; btn.disabled=false;
+            if (res.status==='success') { llenarCamposClienteWisp(res.data); alert("Datos del cliente encontrados y cargados exitosamente."); }
+            else if (res.status==='multiple') { mostrarModalSimilares(res.similares); }
             else { alert(res.message || "No se encontró ningún cliente con ese criterio en WispHub."); }
           })
-          .withFailureHandler(function(err) { btn.innerHTML = originalText; btn.disabled = false; alert("Error al intentar conectar con WispHub: " + err); })
-          .buscarClienteWispHub(nombreInput, idInput);
-      } else { btn.innerHTML = originalText; btn.disabled = false; alert("Entorno local detectado. Requiere despliegue de Apps Script."); }
+          .withFailureHandler(err => { btn.innerHTML=orig; btn.disabled=false; alert("Error al conectar con WispHub: "+err); })
+          .buscarClienteWispHub(nombre, id);
+      } else { btn.innerHTML=orig; btn.disabled=false; alert("Requiere despliegue de Apps Script."); }
+    }
+
+    // OPTIMIZACIÓN: función única para badge de estado WispHub (antes duplicada 2 veces)
+    function _aplicarBadgeEstado(estado) {
+      const badge = document.getElementById('badge_estado_wisphub');
+      const ctr   = document.getElementById('contenedor_estado_wisphub');
+      if (!badge || !ctr) return;
+      const est = (estado || "Desconocido").toUpperCase();
+      badge.innerText = est;
+      badge.className = "text-[11px] uppercase tracking-wider font-black px-2 py-1 rounded-lg border shadow-sm";
+      const cls = est==='ACTIVO'||est==='INSTALADO' ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+        : est==='SUSPENDIDO'||est==='CORTADO'||est==='MOROSO' ? 'bg-rose-100 text-rose-800 border-rose-300'
+        : est==='INACTIVO'||est==='DESINSTALADO'||est==='CANCELADO' ? 'bg-slate-100 text-slate-800 border-slate-300'
+        : est==='NUEVO'||est==='PENDIENTE' ? 'bg-blue-100 text-blue-800 border-blue-300'
+        : 'bg-amber-100 text-amber-800 border-amber-300';
+      cls.split(' ').forEach(c => badge.classList.add(c));
+      ctr.classList.remove('hidden');
     }
 
     function llenarCamposClienteWisp(data) {
-      if(data.nombre)    document.getElementById('form_nombredelcliente').value = data.nombre;
-      if(data.ip)        document.getElementById('form_ip').value = data.ip;
-      if(data.telefono)  document.getElementById('form_telefono').value = data.telefono.replace(/[^0-9]/g, '');
+      if(data.nombre)       document.getElementById('form_nombredelcliente').value = data.nombre;
+      if(data.ip)           document.getElementById('form_ip').value = data.ip;
+      if(data.telefono)     document.getElementById('form_telefono').value = data.telefono.replace(/[^0-9]/g,'');
       if(data.calleynumero) document.getElementById('form_calleynumero').value = data.calleynumero;
       if(data.colonia) {
-        let selectColonia = document.getElementById('form_coloniaofracc');
-        if (selectColonia) {
-          let opts = Array.from(selectColonia.options).map(function(o){ return o.value; });
-          if (!opts.includes(data.colonia)) { let opt = document.createElement('option'); opt.value = data.colonia; opt.text = data.colonia; selectColonia.appendChild(opt); }
-          selectColonia.value = data.colonia;
+        const sel = document.getElementById('form_coloniaofracc');
+        if(sel) {
+          let existe = Array.from(sel.options).some(o => o.value === data.colonia);
+          if (!existe) { const opt=document.createElement('option'); opt.value=data.colonia; opt.text=data.colonia; sel.appendChild(opt); }
+          sel.value = data.colonia;
         }
       }
       if(data.coordenadas) document.getElementById('form_coordenadasoentrecalles').value = data.coordenadas;
-      const badge = document.getElementById('badge_estado_wisphub');
-      const cont  = document.getElementById('contenedor_estado_wisphub');
-      if (badge && cont) {
-        const { clase, texto } = estadoBadgeClases(data.estado);
-        badge.className = clase; badge.innerText = texto; cont.classList.remove('hidden');
+      _aplicarBadgeEstado(data.estado);
+    }
+
+    function llenarFormularioWispHub(data) {
+      llenarCamposClienteWisp(data);
+      // asegurar que la colonia quede en la lista de colonias guardadas
+      if (data.colonia) {
+        try {
+          let lista = JSON.parse(safeStorage.getItem('config_lista_colonias') || '[]');
+          if (!lista.includes(data.colonia)) { lista.push(data.colonia); safeStorage.setItem('config_lista_colonias', JSON.stringify(lista)); }
+        } catch(e) {}
       }
     }
 
@@ -710,294 +790,258 @@
     function mostrarModalSimilares(similares) {
       window.clientesSimilaresTemp = similares;
       renderizarListaSimilares(similares);
-      const fi = document.getElementById('filtroIpSimilares'); if(fi) fi.value = "";
+      const fi = document.getElementById('filtroIpSimilares'); if(fi) fi.value="";
       document.getElementById('modalClientesSimilares').classList.remove('hidden');
     }
 
-    // OPT: innerHTML con join en lugar de appendChild por ítem
     function renderizarListaSimilares(lista) {
-      const contenedor = document.getElementById('listaClientesSimilares');
-      if(!lista || lista.length === 0) {
-        contenedor.innerHTML = "<p class='text-sm text-slate-500 font-medium p-2'>No se encontraron coincidencias bajo esa dirección IP.</p>";
-        return;
-      }
-      contenedor.innerHTML = lista.map(function(c, idx) {
-        let estado = (c.estado || "Desconocido").toUpperCase();
-        let colorClase = estado==='ACTIVO' ? 'bg-emerald-500' : (estado.includes('SUSPENDIDO')||estado==='MOROSO' ? 'bg-rose-500' : 'bg-amber-500');
-        return '<div class="p-3 border border-slate-200 rounded-lg hover:bg-indigo-50 cursor-pointer transition-colors shadow-sm" onclick="(function(){llenarCamposClienteWisp(window.clientesSimilaresTemp['+idx+']);document.getElementById(\'modalClientesSimilares\').classList.add(\'hidden\');})()">' +
-          '<div class="font-bold text-sm text-indigo-700">' + (c.nombre||'Sin Nombre') + ' <span class="text-[10px] text-white bg-slate-400 px-1.5 py-0.5 rounded ml-2">ID: '+(c.id||'N/A')+'</span> <span class="text-[10px] text-white '+colorClase+' px-1.5 py-0.5 rounded ml-1">'+estado+'</span></div>' +
-          '<div class="text-xs text-slate-600 mt-1.5 font-medium"><span class="inline-block mr-3 bg-slate-100 px-1 py-0.5 rounded">📶 IP: <span class="text-slate-800">'+(c.ip||'N/A')+'</span></span><span class="inline-block mr-3">📞 Tel: '+(c.telefono||'N/A')+'</span></div>' +
-          '<div class="text-[11px] text-slate-500 mt-1.5 line-clamp-1">📍 '+(c.calleynumero||'')+' '+(c.colonia||'')+'</div></div>';
-      }).join('');
+      const ctr = document.getElementById('listaClientesSimilares');
+      if (!lista || lista.length===0) { ctr.innerHTML="<p class='text-sm text-slate-500 font-medium p-2'>No se encontraron coincidencias bajo esa dirección IP.</p>"; return; }
+      // OPTIMIZACIÓN: DocumentFragment — evita reflow por cada appendChild
+      const frag = document.createDocumentFragment();
+      lista.forEach(c => {
+        const div = document.createElement('div');
+        div.className = "p-3 border border-slate-200 rounded-lg hover:bg-indigo-50 cursor-pointer transition-colors shadow-sm";
+        div.onclick = () => { llenarCamposClienteWisp(c); document.getElementById('modalClientesSimilares').classList.add('hidden'); };
+        const est = (c.estado||"Desconocido").toUpperCase();
+        const col = est==='ACTIVO' ? 'bg-emerald-500' : (est.includes('SUSPENDIDO')||est==='MOROSO' ? 'bg-rose-500':'bg-amber-500');
+        div.innerHTML = `<div class="font-bold text-sm text-indigo-700">${c.nombre||'Sin Nombre'} <span class="text-[10px] text-white bg-slate-400 px-1.5 py-0.5 rounded ml-2">ID: ${c.id||'N/A'}</span> <span class="text-[10px] text-white ${col} px-1.5 py-0.5 rounded ml-1">${est}</span></div><div class="text-xs text-slate-600 mt-1.5 font-medium"><span class="inline-block mr-3 bg-slate-100 px-1 py-0.5 rounded">📶 IP: <span class="text-slate-800">${c.ip||'N/A'}</span></span><span class="inline-block mr-3">📞 Tel: ${c.telefono||'N/A'}</span></div><div class="text-[11px] text-slate-500 mt-1.5 line-clamp-1">📍 ${c.calleynumero||''} ${c.colonia||''}</div>`;
+        frag.appendChild(div);
+      });
+      ctr.innerHTML = "";
+      ctr.appendChild(frag);
     }
 
     function filtrarSimilaresIp() {
       const filtro = document.getElementById('filtroIpSimilares').value.toLowerCase().trim();
-      renderizarListaSimilares(filtro ? window.clientesSimilaresTemp.filter(function(c){ return (c.ip||"").toLowerCase().includes(filtro); }) : window.clientesSimilaresTemp);
-    }
-
-    function llenarFormularioWispHub(data) {
-      if (data.nombre) document.getElementById('form_nombredelcliente').value = data.nombre;
-      document.getElementById('form_ip').value = data.ip || "";
-      document.getElementById('form_telefono').value = data.telefono || "";
-      document.getElementById('form_calleynumero').value = data.calleynumero || "";
-      document.getElementById('form_coordenadasoentrecalles').value = data.coordenadas || "";
-      if (data.colonia) {
-        let valorExactoColonia = asegurarOpcionSelect('form_coloniaofracc', data.colonia);
-        document.getElementById('form_coloniaofracc').value = valorExactoColonia;
-        try {
-          let listaColonias = [];
-          let stored = safeStorage.getItem('config_lista_colonias');
-          if (stored) listaColonias = JSON.parse(stored);
-          if (listaColonias.indexOf(valorExactoColonia) === -1) { listaColonias.push(valorExactoColonia); safeStorage.setItem('config_lista_colonias', JSON.stringify(listaColonias)); }
-        } catch(e) {}
-      }
-      const badge = document.getElementById('badge_estado_wisphub');
-      const cont  = document.getElementById('contenedor_estado_wisphub');
-      if (badge && cont) { const { clase, texto } = estadoBadgeClases(data.estado); badge.className = clase; badge.innerText = texto; cont.classList.remove('hidden'); }
+      renderizarListaSimilares(window.clientesSimilaresTemp.filter(c => (c.ip||"").toLowerCase().includes(filtro)));
     }
 
     function mostrarOpcionesWispHub(clientes) {
       clientesTemporalesWisphub = clientes;
-      const inputFiltro = document.getElementById('filtroIpWisphub');
-      inputFiltro.value = '';
-      renderizarListaWisphub(clientesTemporalesWisphub);
-      inputFiltro.onkeyup = function(e) {
+      const fi = document.getElementById('filtroIpWisphub'); fi.value='';
+      renderizarListaWisphub(clientes);
+      fi.onkeyup = e => {
         const t = e.target.value.toLowerCase().trim();
-        renderizarListaWisphub(t ? clientesTemporalesWisphub.filter(function(c){ return (c.ip||"").toLowerCase().includes(t); }) : clientesTemporalesWisphub);
+        renderizarListaWisphub(t ? clientesTemporalesWisphub.filter(c=>(c.ip||"").toLowerCase().includes(t)) : clientesTemporalesWisphub);
       };
       document.getElementById('modalWisphubSeleccion').classList.remove('hidden');
     }
 
-    // OPT: innerHTML con join en lugar de appendChild por ítem
     function renderizarListaWisphub(lista) {
-      const contenedor = document.getElementById('listaClientesWisphub');
-      if (lista.length === 0) { contenedor.innerHTML = '<div class="text-sm text-slate-500 text-center py-4 font-medium">No se encontraron registros con esa IP.</div>'; return; }
-      contenedor.innerHTML = lista.map(function(c, idx) {
-        let estado = (c.estado||"Desconocido").toUpperCase();
-        let colorClase = estado==='ACTIVO' ? 'bg-emerald-500' : (estado.includes('SUSPENDIDO')||estado==='MOROSO' ? 'bg-rose-500' : 'bg-amber-500');
-        let ipVisual = c.ip ? '<span class="font-bold text-indigo-700">IP: '+c.ip+'</span> | ' : '<span class="text-slate-400">Sin IP registrada</span> | ';
-        return '<div class="p-3 border border-slate-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 cursor-pointer transition-colors" onclick="llenarFormularioWispHub(clientesTemporalesWisphub['+idx+']);cerrarModalWisphub();alert(\'¡Datos del cliente seleccionados y rellenados con éxito!\')">' +
-          '<div class="font-bold text-sm text-slate-800">'+(c.nombre||'Sin nombre')+' <span class="text-[10px] text-white '+colorClase+' px-1.5 py-0.5 rounded ml-1">'+estado+'</span></div>' +
-          '<div class="text-xs text-slate-600 mt-1.5">'+ipVisual+'📍 '+(c.calleynumero||'Sin dirección')+' | 🏙️ '+(c.colonia||'Sin colonia')+'</div></div>';
-      }).join('');
+      const ctr = document.getElementById('listaClientesWisphub');
+      if (!lista.length) { ctr.innerHTML='<div class="text-sm text-slate-500 text-center py-4 font-medium">No se encontraron registros con esa IP.</div>'; return; }
+      // OPTIMIZACIÓN: DocumentFragment
+      const frag = document.createDocumentFragment();
+      lista.forEach(c => {
+        const div = document.createElement('div');
+        div.className = "p-3 border border-slate-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 cursor-pointer transition-colors";
+        const est = (c.estado||"Desconocido").toUpperCase();
+        const col = est==='ACTIVO' ? 'bg-emerald-500':(est.includes('SUSPENDIDO')||est==='MOROSO'?'bg-rose-500':'bg-amber-500');
+        const ipV = c.ip ? `<span class="font-bold text-indigo-700">IP: ${c.ip}</span> | ` : `<span class="text-slate-400">Sin IP registrada</span> | `;
+        div.innerHTML = `<div class="font-bold text-sm text-slate-800">${c.nombre||'Sin nombre'} <span class="text-[10px] text-white ${col} px-1.5 py-0.5 rounded ml-1">${est}</span></div><div class="text-xs text-slate-600 mt-1.5">${ipV}📍 ${c.calleynumero||'Sin dirección'} | 🏙️ ${c.colonia||'Sin colonia'}</div>`;
+        div.onclick = () => { llenarFormularioWispHub(c); cerrarModalWisphub(); alert("¡Datos del cliente seleccionados y rellenados con éxito!"); };
+        frag.appendChild(div);
+      });
+      ctr.innerHTML=""; ctr.appendChild(frag);
     }
 
     function cerrarModalWisphub() { document.getElementById('modalWisphubSeleccion').classList.add('hidden'); }
 
     function sincronizarDatos() {
       const btn = document.getElementById('btnSincronizar');
-      if(btn) btn.innerHTML = "⏳ Sincronizando...";
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(function(datos) {
-            baseDatosGoogle = datos || [];
-            baseDatosGoogle.forEach(function(c) { if (c.tecnico) c.tecnico = normalizarTecnico(c.tecnico); });
-            try { safeStorage.setItem('bDG_v1', JSON.stringify(baseDatosGoogle)); } catch(e) {}
-            renderizarAgenda();
-            if(btn) btn.innerHTML = "🔄 Sincronizar";
-          })
-          .withFailureHandler(function(err) { alert("Error al sincronizar datos: " + err); if(btn) btn.innerHTML = "🔄 Sincronizar"; })
-          .obtenerDatosAgenda();
-      }
+      if(btn) btn.innerHTML="⏳ Sincronizando...";
+      if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+      google.script.run
+        .withSuccessHandler(datos => {
+          baseDatosGoogle = datos || [];
+          baseDatosGoogle.forEach(c => { if(c.tecnico) c.tecnico = normalizarTecnico(c.tecnico); });
+          _reconstruirIndice();
+          try { safeStorage.setItem('bDG_v2', JSON.stringify(baseDatosGoogle)); } catch(e) {}
+          _hashDatos = baseDatosGoogle.length + '_' + (baseDatosGoogle[0]?.rowNum||'') + '_' + (baseDatosGoogle[baseDatosGoogle.length-1]?.rowNum||'');
+          renderizarAgenda();
+          if(btn) btn.innerHTML="🔄 Sincronizar";
+        })
+        .withFailureHandler(err => { alert("Error al sincronizar datos: "+err); if(btn) btn.innerHTML="🔄 Sincronizar"; })
+        .obtenerDatosAgenda();
     }
 
+    function asegurarOpcionSelect(id, valor) {
+      if (!valor) return valor;
+      const sel = document.getElementById(id); if(!sel) return valor;
+      let valorExacto = valor;
+      for(let i=0; i<sel.options.length; i++) {
+        if(sel.options[i].value.toString().trim().toLowerCase() === valor.toString().trim().toLowerCase()) {
+          valorExacto = sel.options[i].value; return valorExacto;
+        }
+      }
+      const opt = document.createElement('option'); opt.value=valor; opt.innerText=valor; sel.appendChild(opt);
+      return valor;
+    }
+
+    // ==========================================
+    // RENDERIZADO DE AGENDA — VERSIÓN OPTIMIZADA
+    // ==========================================
     function renderizarAgenda() {
       const fechaActual = document.getElementById('filtroFecha').value;
-      if(!fechaActual) return;
+      if (!fechaActual) return;
 
       const contenedor = document.getElementById('contenedorDias');
       contenedor.innerHTML = '';
-
       window.cuadrillasManuales = window.cuadrillasManuales || {};
       window.cuadrillasOcultas  = window.cuadrillasOcultas  || {};
-      let manualesHoy = window.cuadrillasManuales[fechaActual] || {};
-      let ocultasHoy  = window.cuadrillasOcultas[fechaActual]  || {};
+      const manualesHoy = window.cuadrillasManuales[fechaActual] || {};
+      const ocultasHoy  = window.cuadrillasOcultas[fechaActual]  || {};
 
-      // OPT: pre-calcular horarios en minúsculas una sola vez (evita .toLowerCase() por cita)
-      const _hLow = horariosPorDefecto.map(function(h){ return h.toLowerCase(); });
-
-      // =====================================================================
-      // OPT: PASE 1 — agrupar citas por técnico Y asignar espacio en un solo bucle
-      // =====================================================================
-      var _cxT = {};
-      var cuadrillasHoy = [];
-      baseDatosGoogle.forEach(function(c) {
-        if (c.fecha === fechaActual && c.tecnico) {
-          if (!_cxT[c.tecnico]) { _cxT[c.tecnico] = []; cuadrillasHoy.push(c.tecnico); }
-          _cxT[c.tecnico].push(c);
-        }
+      // OPTIMIZACIÓN: índice por técnico O(n) — evita doble loop O(n²)
+      const citasPorTecnico = {};       // { tecnico: [citas] }
+      const cuadrillasHoy   = [];       // orden de aparición
+      baseDatosGoogle.forEach(c => {
+        if (c.fecha !== fechaActual || !c.tecnico) return;
+        if (!citasPorTecnico[c.tecnico]) { citasPorTecnico[c.tecnico] = []; cuadrillasHoy.push(c.tecnico); }
+        citasPorTecnico[c.tecnico].push(c);
       });
 
-      // PASE 1b — ordenar y asignar espacio por cuadrilla
-      cuadrillasHoy.forEach(function(tec) {
-        let citasTec = _cxT[tec].slice();
-        citasTec.sort(function(a, b) {
-          let horA = (a.horario||"").trim().toLowerCase();
-          let horB = (b.horario||"").trim().toLowerCase();
-          // Normalizar variantes
-          horA = horA.replace('antes de las 12:00pm','antes de las 12pm').replace('despues de las 12:00pm','despues de las 12pm').replace('antes de las 3:00pm','antes de las 3pm').replace('despues de las 3:00pm','despues de las 3pm').replace('despues de las 6:00pm','despues de las 6pm');
-          horB = horB.replace('antes de las 12:00pm','antes de las 12pm').replace('despues de las 12:00pm','despues de las 12pm').replace('antes de las 3:00pm','antes de las 3pm').replace('despues de las 3:00pm','despues de las 3pm').replace('despues de las 6:00pm','despues de las 6pm');
-          let isDispA = horA.indexOf("disponibilidad")!==-1, isDispB = horB.indexOf("disponibilidad")!==-1;
-          if (isDispA && !isDispB) return 1; if (!isDispA && isDispB) return -1;
-          let idxA = _hLow.indexOf(horA), idxB = _hLow.indexOf(horB);
-          if (idxA!==-1 && idxB!==-1) return idxA-idxB;
-          if (idxA!==-1) return -1; if (idxB!==-1) return 1;
-          return horA < horB ? -1 : horA > horB ? 1 : 0;
+      // Ordenar citas de cada cuadrilla y asignar espacio en memoria
+      cuadrillasHoy.forEach(tec => {
+        const citas = citasPorTecnico[tec];
+        citas.sort((a,b) => {
+          let ha = (a.horario||"").trim().toLowerCase().replace(/12:00pm/, '12pm').replace(/3:00pm/, '3pm').replace(/6:00pm/, '6pm');
+          let hb = (b.horario||"").trim().toLowerCase().replace(/12:00pm/, '12pm').replace(/3:00pm/, '3pm').replace(/6:00pm/, '6pm');
+          const dA = ha.includes('disponibilidad'), dB = hb.includes('disponibilidad');
+          if(dA && !dB) return 1; if(!dA && dB) return -1;
+          // OPTIMIZACIÓN: lookup O(1) con objeto en lugar de indexOf O(n)
+          const iA = _horariosIdxMap[ha] ?? 999;
+          const iB = _horariosIdxMap[hb] ?? 999;
+          if(iA !== 999 && iB !== 999) return iA - iB;
+          return ha < hb ? -1 : ha > hb ? 1 : 0;
         });
-        citasTec.forEach(function(cita, idx) { cita.espacio = idx + 1; });
+        citas.forEach((c,i) => { c.espacio = i + 1; });
       });
 
-      // =====================================================================
-      // OPT: PASE 2 — construir _rI y cuadrillasDelDia en un solo recorrido
-      // (antes eran 2 iteraciones separadas sobre baseDatosGoogle)
-      // =====================================================================
-      var _rI = {};
-      var cuadrillasDelDia = {};
-      baseDatosGoogle.forEach(function(cita) {
-        if (cita.fecha !== fechaActual || !cita.tecnico || ocultasHoy[cita.tecnico]) return;
-
-        // Asignar espacio si falta (caso raro)
-        if (!cita.espacio || isNaN(parseInt(cita.espacio)) || parseInt(cita.espacio) <= 0) {
-          var esp = 1;
-          // OPT: usa _rI (O(1)) en lugar de baseDatosGoogle.some() (O(n))
-          while (_rI[cita.tecnico] && _rI[cita.tecnico][esp] && _rI[cita.tecnico][esp].rowNum !== cita.rowNum) { esp++; }
-          cita.espacio = esp;
+      // OPTIMIZACIÓN: índice de búsqueda por {tecnico}{espacio} para render O(1)
+      const slotIndex = {};  // 'tecnico|espacio' -> cita
+      baseDatosGoogle.forEach(c => {
+        if(c.fecha===fechaActual && c.tecnico && c.espacio) {
+          slotIndex[c.tecnico + '|' + c.espacio] = c;
         }
-
-        // Construir índice { tecnico: { espacio: cita } }
-        if (!_rI[cita.tecnico]) _rI[cita.tecnico] = {};
-        _rI[cita.tecnico][parseInt(cita.espacio)] = cita;
-
-        // Construir cuadrillasDelDia
-        if (!cuadrillasDelDia[cita.tecnico]) {
-          cuadrillasDelDia[cita.tecnico] = (espaciosPorFecha[fechaActual] && espaciosPorFecha[fechaActual][cita.tecnico]) ? espaciosPorFecha[fechaActual][cita.tecnico] : 4;
-        }
-        let espNum = parseInt(cita.espacio);
-        if (espNum > cuadrillasDelDia[cita.tecnico]) { cuadrillasDelDia[cita.tecnico] = espNum; }
       });
 
-      Object.keys(manualesHoy).forEach(function(tec) {
-        if (!cuadrillasDelDia[tec] && !ocultasHoy[tec]) {
-          cuadrillasDelDia[tec] = (espaciosPorFecha[fechaActual] && espaciosPorFecha[fechaActual][tec]) ? espaciosPorFecha[fechaActual][tec] : 4;
+      // Calcular cuadrillas del día y espacios
+      const cuadrillasDelDia = {};
+      baseDatosGoogle.forEach(c => {
+        if(c.fecha!==fechaActual || !c.tecnico || ocultasHoy[c.tecnico]) return;
+        if(!cuadrillasDelDia[c.tecnico]) {
+          cuadrillasDelDia[c.tecnico] = (espaciosPorFecha[fechaActual]?.[c.tecnico]) ?? 4;
         }
+        const espNum = parseInt(c.espacio);
+        if(!isNaN(espNum) && espNum > cuadrillasDelDia[c.tecnico]) cuadrillasDelDia[c.tecnico] = espNum;
+      });
+      Object.keys(manualesHoy).forEach(tec => {
+        if(!cuadrillasDelDia[tec] && !ocultasHoy[tec])
+          cuadrillasDelDia[tec] = (espaciosPorFecha[fechaActual]?.[tec]) ?? 4;
       });
       espaciosPorFecha[fechaActual] = cuadrillasDelDia;
       safeStorage.setItem('espacios_por_fecha_v4', JSON.stringify(espaciosPorFecha));
 
-      const nombresCuadrillas = Object.keys(cuadrillasDelDia);
-      let cuadrillasVisibles  = nombresCuadrillas;
+      let cuadrillasVisibles = Object.keys(cuadrillasDelDia);
       if (rolUsuario === 'tecnico') {
-        let nombreTecnico = normalizarTecnico(safeSession.getItem('nombre_usuario'));
-        cuadrillasVisibles = nombresCuadrillas.filter(function(c){ return normalizarTecnico(c)===nombreTecnico; });
+        const nomTec = normalizarTecnico(safeSession.getItem('nombre_usuario'));
+        cuadrillasVisibles = cuadrillasVisibles.filter(c => normalizarTecnico(c) === nomTec);
       }
 
-      if (cuadrillasVisibles.length === 0) {
-        contenedor.innerHTML = '<p class="text-center text-slate-500 py-10 font-medium">' +
-          (rolUsuario==='tecnico' ? 'No tienes ninguna cuadrilla asignada o no hay citas para ti en este día.' : 'No hay cuadrillas registradas para el día seleccionado.') + '</p>';
+      if (!cuadrillasVisibles.length) {
+        contenedor.innerHTML = `<p class="text-center text-slate-500 py-10 font-medium">${rolUsuario==='tecnico' ? 'No tienes ninguna cuadrilla asignada o no hay citas para ti en este día.' : 'No hay cuadrillas registradas para el día seleccionado.'}</p>`;
         return;
       }
 
       const gridDiv = document.createElement('div');
-      gridDiv.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-" + Math.min(cuadrillasVisibles.length, 4) + " gap-4 items-start";
+      gridDiv.className = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-" + Math.min(cuadrillasVisibles.length,4) + " gap-4 items-start";
 
-      cuadrillasVisibles.forEach(function(cuadrilla) {
+      cuadrillasVisibles.forEach(cuadrilla => {
         const numEspacios = cuadrillasDelDia[cuadrilla];
         const colDiv = document.createElement('div');
         colDiv.className = 'bg-slate-100 rounded-lg p-3 shadow-inner min-h-[300px] border border-slate-200';
 
-        let adminControles = "";
+        // OPTIMIZACIÓN: construir HTML como array de strings y hacer join al final (más rápido que concatenación)
+        const parts = [];
+        const fq = JSON.stringify(fechaActual); // evita escapar en cada iteración
+        const cq = cuadrilla.replace(/'/g,"\\'");
+
+        let adminCtrl = '';
         if (rolUsuario === 'admin') {
-          adminControles =
-            '<div class="flex gap-1 items-center bg-indigo-700 p-1 rounded ml-2 shrink-0">' +
-            '<button onclick="editarCuadrilla(\'' + fechaActual + '\', \'' + cuadrilla + '\')" title="Editar Nombre" class="hover:bg-indigo-500 px-1.5 rounded text-sm transition-colors">✏️</button>' +
-            '<button onclick="eliminarCuadrilla(\'' + fechaActual + '\', \'' + cuadrilla + '\')" title="Eliminar Columna" class="hover:bg-rose-500 px-1.5 rounded text-sm transition-colors">🗑️</button>' +
-            '<div class="w-px h-4 bg-indigo-400 mx-0.5"></div>' +
-            '<button onclick="modificarEspacios(\'' + fechaActual + '\', \'' + cuadrilla + '\', \'sumar\')" title="Añadir espacio" class="hover:bg-indigo-500 px-1.5 rounded text-sm font-bold transition-colors">+</button>' +
-            '<button onclick="modificarEspacios(\'' + fechaActual + '\', \'' + cuadrilla + '\', \'restar\')" title="Quitar espacio" class="hover:bg-indigo-500 px-1.5 rounded text-sm font-bold transition-colors">-</button>' +
-            '</div>';
+          adminCtrl = `<div class="flex gap-1 items-center bg-indigo-700 p-1 rounded ml-2 shrink-0"><button onclick="editarCuadrilla(${fq},'${cq}')" title="Editar Nombre" class="hover:bg-indigo-500 px-1.5 rounded text-sm transition-colors">✏️</button><button onclick="eliminarCuadrilla(${fq},'${cq}')" title="Eliminar Columna" class="hover:bg-rose-500 px-1.5 rounded text-sm transition-colors">🗑️</button><div class="w-px h-4 bg-indigo-400 mx-0.5"></div><button onclick="modificarEspacios(${fq},'${cq}','sumar')" title="Añadir espacio" class="hover:bg-indigo-500 px-1.5 rounded text-sm font-bold transition-colors">+</button><button onclick="modificarEspacios(${fq},'${cq}','restar')" title="Quitar espacio" class="hover:bg-indigo-500 px-1.5 rounded text-sm font-bold transition-colors">-</button></div>`;
         }
-        let btnRuta = '<button onclick="abrirRutaMapa(\'' + cuadrilla + '\', \'' + fechaActual + '\')" title="Ver ruta en mapa" class="hover:bg-indigo-500 bg-indigo-700 px-1.5 py-0.5 rounded text-xs transition-colors ml-2 shrink-0 border border-indigo-500 shadow-sm flex items-center gap-1">🗺️ Ruta</button>';
 
-        // =====================================================================
-        // OPT: array push + join — O(n) en vez de concatenación O(n²)
-        // Para cuadrillas con muchas citas, la diferencia es significativa
-        // =====================================================================
-        var colParts = [
-          '<div class="flex justify-between items-center bg-indigo-600 text-white p-2 rounded mb-3 shadow">',
-          '<h3 class="font-bold text-sm tracking-wide uppercase truncate w-full pl-1">' + cuadrilla + '</h3>',
-          btnRuta, adminControles,
-          '</div><div class="space-y-3">'
-        ];
+        parts.push(`<div class="flex justify-between items-center bg-indigo-600 text-white p-2 rounded mb-3 shadow"><h3 class="font-bold text-sm tracking-wide uppercase truncate w-full pl-1">${cuadrilla}</h3><button onclick="abrirRutaMapa('${cq}',${fq})" title="Ver ruta en mapa" class="hover:bg-indigo-500 bg-indigo-700 px-1.5 py-0.5 rounded text-xs transition-colors ml-2 shrink-0 border border-indigo-500 shadow-sm flex items-center gap-1">🗺️ Ruta</button>${adminCtrl}</div><div class="space-y-3">`);
 
-        for(let i = 1; i <= numEspacios; i++) {
-          const cita = (_rI[cuadrilla] || {})[i]; // O(1) lookup
+        for (let i = 1; i <= numEspacios; i++) {
+          const cita = slotIndex[cuadrilla + '|' + i];
           if (cita) {
-            // OPT: lookup en _STATUS_CLASSES en lugar de if/else chain
-            let serealizoVal = (cita.serealizo || "").toString().trim().toLowerCase();
-            let statusInfo   = _STATUS_CLASSES[serealizoVal];
-            let colorClass, badgeHtml, extraTitleMargin;
-            if (statusInfo) {
-              colorClass       = statusInfo.color;
-              badgeHtml        = '<div class="absolute top-2 left-2 text-[10px] ' + statusInfo.bg + ' text-white px-2 py-0.5 rounded font-bold uppercase tracking-wider shadow-sm">' + statusInfo.badge + '</div>';
-              extraTitleMargin = statusInfo.margin;
-            } else {
-              colorClass = "border-slate-300 bg-white hover:border-indigo-400 text-slate-800";
-              badgeHtml  = ''; extraTitleMargin = '';
-              let motivoText = (cita.motivo||"").toLowerCase();
-              if (motivoText.indexOf("instalación")>-1||motivoText.indexOf("instalacion")>-1||motivoText.indexOf("cambio de domicilio")>-1) { colorClass="border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-900"; }
-              else if (motivoText.indexOf("soporte")>-1) { colorClass="border-orange-500 bg-orange-50 hover:bg-orange-100 text-orange-900"; }
-              else if (motivoText.indexOf("desinstalación")>-1||motivoText.indexOf("desinstalacion")>-1) { colorClass="border-red-500 bg-red-50 hover:bg-red-100 text-red-900"; }
+            const srv = (cita.serealizo||"").trim().toLowerCase();
+            const mot = (cita.motivo||"").toLowerCase();
+            let colorClass, badgeHtml = '', extraTitle = '';
+            let hasStatus = true;
+
+            switch(srv) {
+              case 'sí': case 'si':
+                colorClass='border-emerald-500 bg-emerald-50 hover:bg-emerald-100 text-emerald-900';
+                badgeHtml='<div class="absolute top-2 left-2 text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded font-bold uppercase tracking-wider shadow-sm">Realizado</div>'; extraTitle='mt-5'; break;
+              case 'no':
+                colorClass='border-rose-400 bg-rose-50 hover:bg-rose-100 text-rose-900';
+                badgeHtml='<div class="absolute top-2 left-2 text-[10px] bg-rose-400 text-white px-2 py-0.5 rounded font-bold uppercase tracking-wider shadow-sm">No Realizado</div>'; extraTitle='mt-5'; break;
+              case 'pendiente':
+                colorClass='border-slate-400 bg-slate-100 hover:bg-slate-200 text-slate-800';
+                badgeHtml='<div class="absolute top-2 left-2 text-[10px] bg-slate-500 text-white px-2 py-0.5 rounded font-bold uppercase tracking-wider shadow-sm">Pendiente</div>'; extraTitle='mt-5'; break;
+              case 'cancelado': case 'cancelo':
+                colorClass='border-red-600 bg-red-100 hover:bg-red-200 text-red-900';
+                badgeHtml='<div class="absolute top-2 left-2 text-[10px] bg-red-600 text-white px-2 py-0.5 rounded font-bold uppercase tracking-wider shadow-sm">Cancelado</div>'; extraTitle='mt-5'; break;
+              case 'reagendar':
+                colorClass='border-orange-500 bg-orange-50 hover:bg-orange-100 text-orange-900';
+                badgeHtml='<div class="absolute top-2 left-2 text-[10px] bg-orange-500 text-white px-2 py-0.5 rounded font-bold uppercase tracking-wider shadow-sm">Reagendar</div>'; extraTitle='mt-5'; break;
+              case 'reagendo':
+                colorClass='border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-900';
+                badgeHtml='<div class="absolute top-2 left-2 text-[10px] bg-blue-500 text-white px-2 py-0.5 rounded font-bold uppercase tracking-wider shadow-sm">Reagendo</div>'; extraTitle='mt-5'; break;
+              default: hasStatus = false; colorClass='border-slate-300 bg-white hover:border-indigo-400 text-slate-800';
             }
 
-            let urlMaps   = cita.coordenadasoentrecalles  ? "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(cita.coordenadasoentrecalles)  : "#";
-            let urlMaps2  = cita.coordenadasoentrecalles2 ? "https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(cita.coordenadasoentrecalles2) : "#";
-            let coordsHtml  = cita.coordenadasoentrecalles  ? '<a href="'+urlMaps+'"  target="_blank" onclick="event.stopPropagation()" class="text-indigo-600 hover:text-indigo-800 underline text-[11px] font-bold truncate block mt-1" title="Abrir en Google Maps">📍 '+cita.coordenadasoentrecalles+'</a>'   : '';
-            let coordsHtml2 = cita.coordenadasoentrecalles2 ? '<a href="'+urlMaps2+'" target="_blank" onclick="event.stopPropagation()" class="text-indigo-600 hover:text-indigo-800 underline text-[11px] font-bold truncate block mt-1" title="Abrir 2da en Google Maps">📍 (Destino): '+cita.coordenadasoentrecalles2+'</a>' : '';
-            let realLink  = cita.linkCliente ? (cita.linkCliente.indexOf('http')===0 ? cita.linkCliente : 'https://'+cita.linkCliente) : "#";
-            let linkHtml  = cita.linkCliente ? '<a href="'+realLink+'" target="_blank" onclick="event.stopPropagation()" class="text-indigo-600 hover:text-indigo-800 underline text-[11px] font-bold break-all truncate block mt-1">🔗 Enlace del cliente</a>' : '';
+            if (!hasStatus) {
+              if (mot.includes('instalaci') || mot.includes('instalacion') || mot.includes('cambio de domicilio')) colorClass='border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-900';
+              else if (mot.includes('soporte')) colorClass='border-orange-500 bg-orange-50 hover:bg-orange-100 text-orange-900';
+              else if (mot.includes('desinstalaci') || mot.includes('desinstalacion')) colorClass='border-red-500 bg-red-50 hover:bg-red-100 text-red-900';
+            }
+
+            // Links y extras
+            const coordQ = cita.coordenadasoentrecalles ? encodeURIComponent(cita.coordenadasoentrecalles) : '';
+            const coordsHtml = coordQ ? `<a href="https://www.google.com/maps/search/?api=1&query=${coordQ}" target="_blank" onclick="event.stopPropagation()" class="text-indigo-600 hover:text-indigo-800 underline text-[11px] font-bold truncate block mt-1">📍 ${cita.coordenadasoentrecalles}</a>` : '';
+            const coord2Q = cita.coordenadasoentrecalles2 ? encodeURIComponent(cita.coordenadasoentrecalles2) : '';
+            const coordsHtml2 = coord2Q ? `<a href="https://www.google.com/maps/search/?api=1&query=${coord2Q}" target="_blank" onclick="event.stopPropagation()" class="text-indigo-600 hover:text-indigo-800 underline text-[11px] font-bold truncate block mt-1">📍 (Destino): ${cita.coordenadasoentrecalles2}</a>` : '';
+            const rl = cita.linkCliente ? (cita.linkCliente.startsWith('http') ? cita.linkCliente : 'https://'+cita.linkCliente) : '#';
+            const linkHtml = cita.linkCliente ? `<a href="${rl}" target="_blank" onclick="event.stopPropagation()" class="text-indigo-600 hover:text-indigo-800 underline text-[11px] font-bold break-all truncate block mt-1">🔗 Enlace del cliente</a>` : '';
 
             let extrasHtml = '';
-            if (cita.bienvenida) extrasHtml += '<div class="text-[10.5px] text-slate-600 mt-1">👋 Bienvenida: <span class="font-bold">'+cita.bienvenida+'</span></div>';
-            if (cita.monto)      extrasHtml += '<div class="text-[10.5px] text-slate-600 mt-1">💵 Monto:$ <span class="font-bold">'+cita.monto+'</span></div>';
-            if (cita.pormediosediocuentadenosotros) {
-              let medioTexto = cita.pormediosediocuentadenosotros + (cita.otroscual ? ' ('+cita.otroscual+')' : '');
-              extrasHtml += '<div class="text-[10.5px] text-slate-600">📢 Medio: <span class="font-bold">'+medioTexto+'</span></div>';
+            if(cita.bienvenida) extrasHtml += `<div class="text-[10.5px] text-slate-600 mt-1">👋 Bienvenida: <span class="font-bold">${cita.bienvenida}</span></div>`;
+            if(cita.monto)      extrasHtml += `<div class="text-[10.5px] text-slate-600 mt-1">💵 Monto:$ <span class="font-bold">${cita.monto}</span></div>`;
+            if(cita.pormediosediocuentadenosotros) {
+              let med = cita.pormediosediocuentadenosotros + (cita.otroscual ? ' ('+cita.otroscual+')' : '');
+              extrasHtml += `<div class="text-[10.5px] text-slate-600">📢 Medio: <span class="font-bold">${med}</span></div>`;
             }
-            if (cita.telefono) {
-              let numLimpio = cita.telefono.replace(/[^0-9]/g, '');
-              extrasHtml += '<div class="mt-2 flex gap-2">'+
-                '<a href="tel:'+numLimpio+'" target="_blank" onclick="event.stopPropagation()" class="flex-1 text-center bg-slate-100 border border-slate-300 text-slate-700 px-2 py-1 rounded text-[10px] font-bold hover:bg-slate-200 transition-colors shadow-sm">📞 Llamar</a>'+
-                '<a href="https://wa.me/'+numLimpio+'" target="_blank" onclick="event.stopPropagation()" class="flex-1 text-center bg-emerald-50 border border-emerald-300 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold hover:bg-emerald-100 transition-colors shadow-sm">💬 WhatsApp</a>'+
-              '</div>';
+            if(cita.telefono) {
+              const nl = cita.telefono.replace(/[^0-9]/g,'');
+              extrasHtml += `<div class="mt-2 flex gap-2"><a href="tel:${nl}" target="_blank" onclick="event.stopPropagation()" class="flex-1 text-center bg-slate-100 border border-slate-300 text-slate-700 px-2 py-1 rounded text-[10px] font-bold hover:bg-slate-200 transition-colors shadow-sm">📞 Llamar</a><a href="https://wa.me/${nl}" target="_blank" onclick="event.stopPropagation()" class="flex-1 text-center bg-emerald-50 border border-emerald-300 text-emerald-700 px-2 py-1 rounded text-[10px] font-bold hover:bg-emerald-100 transition-colors shadow-sm">💬 WhatsApp</a></div>`;
             }
 
-            colParts.push(
-              '<div class="slot-card border-l-4 '+colorClass+' p-3 rounded-lg shadow-sm cursor-pointer transition-colors relative"'+
-              ' draggable="true" ondragstart="dragStart(event,'+cita.rowNum+')" onclick="abrirModalEdicion('+cita.rowNum+')"'+
-              ' ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event,\''+cuadrilla+'\','+i+')">' +
-              badgeHtml +
-              '<div class="absolute top-2 right-2 text-[10px] bg-white/50 text-slate-600 px-1.5 py-0.5 rounded font-bold">#'+i+'</div>'+
-              '<div class="font-black text-sm pr-6 '+extraTitleMargin+'">'+(cita.nombredelcliente||'Sin Nombre')+'</div>'+
-              '<div class="text-[11px] font-bold mt-1 opacity-90">🕒 '+(cita.horario||'--:--')+' | <span class="uppercase">'+(cita.motivo||'')+'</span></div>'+
-              extrasHtml + coordsHtml + coordsHtml2 + linkHtml +
-              '</div>'
-            );
+            parts.push(`<div class="slot-card border-l-4 ${colorClass} p-3 rounded-lg shadow-sm cursor-pointer transition-colors relative" draggable="true" ondragstart="dragStart(event,${cita.rowNum})" onclick="abrirModalEdicion(${cita.rowNum})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event,'${cq}',${i})">${badgeHtml}<div class="absolute top-2 right-2 text-[10px] bg-white/50 text-slate-600 px-1.5 py-0.5 rounded font-bold">#${i}</div><div class="font-black text-sm pr-6 ${extraTitle}">${cita.nombredelcliente||'Sin Nombre'}</div><div class="text-[11px] font-bold mt-1 opacity-90">🕒 ${cita.horario||'--:--'} | <span class="uppercase">${cita.motivo||''}</span></div>${extrasHtml}${coordsHtml}${coordsHtml2}${linkHtml}</div>`);
           } else {
-            colParts.push(
-              '<div class="border-2 border-dashed border-slate-300 rounded-lg p-3 text-center hover:bg-indigo-50 hover:border-indigo-300 transition-colors cursor-pointer text-slate-400 hover:text-indigo-600 min-h-[80px] flex flex-col items-center justify-center"'+
-              ' onclick="abrirModalNuevo(\''+cuadrilla+'\','+i+')"'+
-              ' ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event,\''+cuadrilla+'\','+i+')">' +
-              '<span class="text-xl leading-none block mb-1">+</span>'+
-              '<span class="text-[10px] font-bold uppercase tracking-wider">Añadir al Espacio '+i+'</span>'+
-              '</div>'
-            );
+            parts.push(`<div class="border-2 border-dashed border-slate-300 rounded-lg p-3 text-center hover:bg-indigo-50 hover:border-indigo-300 transition-colors cursor-pointer text-slate-400 hover:text-indigo-600 min-h-[80px] flex flex-col items-center justify-center" onclick="abrirModalNuevo('${cq}',${i})" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event,'${cq}',${i})"><span class="text-xl leading-none block mb-1">+</span><span class="text-[10px] font-bold uppercase tracking-wider">Añadir al Espacio ${i}</span></div>`);
           }
         }
-        colParts.push('</div>');
-        colDiv.innerHTML = colParts.join(''); // OPT: una sola asignación de innerHTML
+
+        parts.push('</div>');
+        colDiv.innerHTML = parts.join('');
         gridDiv.appendChild(colDiv);
       });
+
       contenedor.appendChild(gridDiv);
     }
 
@@ -1005,173 +1049,147 @@
       let nombreNuevo = prompt("Ingresa el nuevo nombre para esta cuadrilla en este día:", nombreViejo);
       if (!nombreNuevo) return;
       nombreNuevo = normalizarTecnico(nombreNuevo);
-      if (nombreNuevo==="" || nombreNuevo===normalizarTecnico(nombreViejo)) return;
-      if (espaciosPorFecha[fecha] && espaciosPorFecha[fecha][nombreViejo]) {
+      if (!nombreNuevo || nombreNuevo === normalizarTecnico(nombreViejo)) return;
+      if (espaciosPorFecha[fecha]?.[nombreViejo]) {
         espaciosPorFecha[fecha][nombreNuevo] = espaciosPorFecha[fecha][nombreViejo];
         delete espaciosPorFecha[fecha][nombreViejo];
         safeStorage.setItem('espacios_por_fecha_v4', JSON.stringify(espaciosPorFecha));
       }
-      if (window.cuadrillasManuales && window.cuadrillasManuales[fecha] && window.cuadrillasManuales[fecha][nombreViejo]) {
-        delete window.cuadrillasManuales[fecha][nombreViejo]; window.cuadrillasManuales[fecha][nombreNuevo] = true;
-      }
-      let listaTecnicos = [];
-      try { let d = safeStorage.getItem('config_lista_tecnicos'); if(d) listaTecnicos = JSON.parse(d); } catch(e){}
-      if (listaTecnicos.indexOf(nombreNuevo)===-1) { listaTecnicos.push(nombreNuevo); safeStorage.setItem('config_lista_tecnicos', JSON.stringify(listaTecnicos)); poblarSelects(); }
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        const btn = document.getElementById('btnSincronizar'); if(btn) btn.innerHTML = "⏳ Actualizando...";
-        google.script.run.withSuccessHandler(function(){ sincronizarDatos(); }).withFailureHandler(function(err){ alert("Error al renombrar: "+err); sincronizarDatos(); }).renombrarCuadrillaBD(nombreViejo, nombreNuevo, fecha);
-      } else { renderizarAgenda(); }
+      if (window.cuadrillasManuales?.[fecha]?.[nombreViejo]) { delete window.cuadrillasManuales[fecha][nombreViejo]; window.cuadrillasManuales[fecha][nombreNuevo] = true; }
+      let lista = []; try { lista = JSON.parse(safeStorage.getItem('config_lista_tecnicos')||'[]'); } catch(e){}
+      if(!lista.includes(nombreNuevo)) { lista.push(nombreNuevo); safeStorage.setItem('config_lista_tecnicos', JSON.stringify(lista)); poblarSelects(); }
+      if (typeof google !== 'undefined' && google.script?.run) {
+        const btn = document.getElementById('btnSincronizar'); if(btn) btn.innerHTML="⏳ Actualizando...";
+        google.script.run.withSuccessHandler(()=>sincronizarDatos()).withFailureHandler(err=>{alert("Error al renombrar: "+err); sincronizarDatos();}).renombrarCuadrillaBD(nombreViejo, nombreNuevo, fecha);
+      } else renderizarAgenda();
     }
 
     function eliminarCuadrilla(fecha, cuadrilla) {
-      if (!confirm('¿Estás seguro de ocultar la columna de "'+cuadrilla+'" de la vista de hoy?\n\nNota: Los registros internos no se borrarán de Google Sheets, solo desaparecerá la columna de la agenda visual de forma temporal.')) return;
-      window.cuadrillasOcultas = window.cuadrillasOcultas || {};
-      if (!window.cuadrillasOcultas[fecha]) window.cuadrillasOcultas[fecha] = {};
+      if(!confirm(`¿Estás seguro de ocultar la columna de "${cuadrilla}" de la vista de hoy?\n\nNota: Los registros internos no se borrarán de Google Sheets, solo desaparecerá la columna de la agenda visual de forma temporal.`)) return;
+      window.cuadrillasOcultas = window.cuadrillasOcultas || {}; if(!window.cuadrillasOcultas[fecha]) window.cuadrillasOcultas[fecha]={};
       window.cuadrillasOcultas[fecha][cuadrilla] = true;
-      if (espaciosPorFecha[fecha] && espaciosPorFecha[fecha][cuadrilla]) {
-        delete espaciosPorFecha[fecha][cuadrilla];
-        if (window.cuadrillasManuales && window.cuadrillasManuales[fecha]) { delete window.cuadrillasManuales[fecha][cuadrilla]; }
-        safeStorage.setItem('espacios_por_fecha_v4', JSON.stringify(espaciosPorFecha));
-      }
+      if(espaciosPorFecha[fecha]?.[cuadrilla]) { delete espaciosPorFecha[fecha][cuadrilla]; if(window.cuadrillasManuales?.[fecha]) delete window.cuadrillasManuales[fecha][cuadrilla]; safeStorage.setItem('espacios_por_fecha_v4',JSON.stringify(espaciosPorFecha)); }
       renderizarAgenda();
-    }
-
-    function asegurarOpcionSelect(idSelect, valor) {
-      if (!valor) return valor;
-      let select = document.getElementById(idSelect); if (!select) return valor;
-      let existe = false, valorExacto = valor;
-      for (let i = 0; i < select.options.length; i++) {
-        if (select.options[i].value.toString().trim().toLowerCase() === valor.toString().trim().toLowerCase()) { existe=true; valorExacto=select.options[i].value; break; }
-      }
-      if (!existe) { let opt=document.createElement('option'); opt.value=valor; opt.innerText=valor; select.appendChild(opt); }
-      return valorExacto;
     }
 
     function abrirModalNuevo(cuadrilla, espacio) {
       document.getElementById('formularioAgenda').reset();
-      const cont = document.getElementById('contenedor_estado_wisphub'); if(cont) cont.classList.add('hidden');
-      document.getElementById('form_rownum').value  = '';
-      document.getElementById('form_fecha').value   = document.getElementById('filtroFecha').value;
-      document.getElementById('form_cuadrilla').value= cuadrilla;
-      document.getElementById('form_espacio').value  = espacio;
-      asegurarOpcionSelect('form_tecnico', cuadrilla);
-      document.getElementById('form_tecnico').value  = cuadrilla;
-      document.getElementById('modalTitulo').innerText = "Nuevo Registro - " + cuadrilla;
-      document.getElementById('btnEliminarRegistro').classList.add('hidden');
-      document.getElementById('btnDuplicarRegistro').classList.add('hidden');
+      document.getElementById('contenedor_estado_wisphub')?.classList.add('hidden');
+      document.getElementById('form_rownum').value=''; document.getElementById('form_fecha').value=document.getElementById('filtroFecha').value;
+      document.getElementById('form_cuadrilla').value=cuadrilla; document.getElementById('form_espacio').value=espacio;
+      asegurarOpcionSelect('form_tecnico', cuadrilla); document.getElementById('form_tecnico').value=cuadrilla;
+      document.getElementById('modalTitulo').innerText="Nuevo Registro - "+cuadrilla;
+      document.getElementById('btnEliminarRegistro').classList.add('hidden'); document.getElementById('btnDuplicarRegistro').classList.add('hidden');
       desbloquearCamposFormulario(); verificarMotivo();
       document.getElementById('modalRegistro').classList.remove('hidden');
     }
 
     function abrirModalEdicion(rowNum) {
-      const cita = baseDatosGoogle.find(function(c){ return c.rowNum==rowNum; });
-      if(!cita) return;
+      // OPTIMIZACIÓN: lookup O(1) con índice en lugar de .find() O(n)
+      const cita = _idxPorRowNum[rowNum];
+      if (!cita) return;
       document.getElementById('formularioAgenda').reset();
-      const cont = document.getElementById('contenedor_estado_wisphub'); if(cont) cont.classList.add('hidden');
-      document.getElementById('form_rownum').value   = cita.rowNum;
-      document.getElementById('form_fecha').value    = cita.fecha;
-      document.getElementById('form_cuadrilla').value= cita.tecnico;
-      document.getElementById('form_espacio').value  = cita.espacio;
+      document.getElementById('contenedor_estado_wisphub')?.classList.add('hidden');
+      document.getElementById('form_rownum').value=cita.rowNum; document.getElementById('form_fecha').value=cita.fecha;
+      document.getElementById('form_cuadrilla').value=cita.tecnico; document.getElementById('form_espacio').value=cita.espacio;
+
       const campos = ['tecnico','motivo','horario','nombredelcliente','linkCliente','telefono','ip','calleynumero','coloniaofracc','coordenadasoentrecalles','calleynumero2','coloniaofracc2','coordenadasoentrecalles2','agente','plan','confirmada','serealizo','yafuecliente','bienvenida','pormediosediocuentadenosotros','otroscual','monto','comentarios','comentarioscat','comentariosdeltecnico','reportetecnico'];
-      campos.forEach(function(c) {
-        let elId = c==='linkCliente' ? 'form_link_cliente' : 'form_'+c;
-        let el   = document.getElementById(elId);
-        if(el) { if(el.tagName==='SELECT' && cita[c]) { asegurarOpcionSelect(elId, cita[c]); } el.value = cita[c] || ""; }
+      campos.forEach(c => {
+        const elId = c==='linkCliente' ? 'form_link_cliente' : 'form_'+c;
+        const el = document.getElementById(elId); if(!el) return;
+        if(el.tagName==='SELECT' && cita[c]) asegurarOpcionSelect(elId, cita[c]);
+        el.value = cita[c] || "";
       });
-      document.getElementById('modalTitulo').innerText = "Editar Registro - " + cita.nombredelcliente;
-      const esAdminEdit = (rolUsuario==='admin');
-      document.getElementById('btnEliminarRegistro').classList.toggle('hidden', !esAdminEdit);
-      document.getElementById('btnDuplicarRegistro').classList.toggle('hidden', !esAdminEdit);
-      esAdminEdit ? desbloquearCamposFormulario() : bloquearCamposParaTecnico();
+      document.getElementById('modalTitulo').innerText="Editar Registro - "+cita.nombredelcliente;
+      const esAdmin = rolUsuario==='admin';
+      document.getElementById('btnEliminarRegistro').classList.toggle('hidden', !esAdmin);
+      document.getElementById('btnDuplicarRegistro').classList.toggle('hidden', !esAdmin);
+      if(esAdmin) desbloquearCamposFormulario(); else bloquearCamposParaTecnico();
       verificarMotivo();
       document.getElementById('modalRegistro').classList.remove('hidden');
     }
 
     function enviarDatos(ev) {
       ev.preventDefault();
-      const ipIngresada = document.getElementById('form_ip').value.trim();
-      if (ipIngresada !== "") {
-        const ipRegEx = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-        if (!ipRegEx.test(ipIngresada)) { alert("⚠️ El formato de la IP es incorrecto (Ej. 192.168.1.1). Por favor, corrígelo o deja el campo vacío."); return; }
+      const ipVal = document.getElementById('form_ip').value.trim();
+      if (ipVal) {
+        if (!/^(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)\.(25[0-5]|2[0-4]\d|[01]?\d\d?)$/.test(ipVal)) {
+          alert("⚠️ El formato de la IP es incorrecto (Ej. 192.168.1.1). Por favor, corrígelo o deja el campo vacío."); return;
+        }
       }
       if (!confirm("¿Estás seguro de que deseas guardar este registro?")) return;
-      const rowNum  = document.getElementById('form_rownum').value;
-      const fecha   = document.getElementById('form_fecha').value;
-      let inputTecnico  = document.getElementById('form_tecnico').value;
-      let cuadrillaOriginal = document.getElementById('form_cuadrilla').value;
-      if (!inputTecnico || inputTecnico.trim()==="") { inputTecnico = cuadrillaOriginal; }
-      const tecnico = normalizarTecnico(inputTecnico);
+
+      const rowNum = document.getElementById('form_rownum').value;
+      const fecha  = document.getElementById('form_fecha').value;
+      let inputTec = document.getElementById('form_tecnico').value;
+      const cuadOrig = document.getElementById('form_cuadrilla').value;
+      if (!inputTec?.trim()) inputTec = cuadOrig;
+      const tecnico = normalizarTecnico(inputTec);
       let espacioFinal = document.getElementById('form_espacio').value;
-      if (tecnico !== normalizarTecnico(cuadrillaOriginal)) {
+
+      if (tecnico !== normalizarTecnico(cuadOrig)) {
         let esp = 1;
-        while (baseDatosGoogle.some(function(c){ return c.fecha===fecha && normalizarTecnico(c.tecnico)===tecnico && c.espacio==esp && c.rowNum!=rowNum; })) { esp++; }
+        while (baseDatosGoogle.some(c => c.fecha===fecha && normalizarTecnico(c.tecnico)===tecnico && c.espacio==esp && c.rowNum!=rowNum)) esp++;
         espacioFinal = esp;
       }
+
       const horario = document.getElementById('form_horario').value;
-      if (horario && horario.trim().toLowerCase().indexOf("disponibilidad")===-1) {
-        const horarioDuplicado = baseDatosGoogle.some(function(c){ return c.fecha===fecha && c.tecnico===tecnico && c.horario && c.horario.trim().toLowerCase()===horario.trim().toLowerCase() && c.rowNum!=rowNum; });
-        if (horarioDuplicado) { alert("⚠️ Advertencia: El horario '"+horario+"' ya está asignado a la cuadrilla '"+tecnico+"' en esta fecha. Por favor, asigne otro horario diferente."); return; }
+      if (horario && !horario.trim().toLowerCase().includes('disponibilidad')) {
+        const hor_low = horario.trim().toLowerCase();
+        if (baseDatosGoogle.some(c => c.fecha===fecha && c.tecnico===tecnico && (c.horario||"").trim().toLowerCase()===hor_low && c.rowNum!=rowNum)) {
+          alert(`⚠️ Advertencia: El horario '${horario}' ya está asignado a la cuadrilla '${tecnico}' en esta fecha.`); return;
+        }
       }
-      const btn = document.getElementById('btnGuardarRegistro');
-      if (btn.disabled) return;
-      btn.innerHTML = "Guardando..."; btn.disabled = true;
-      let citaOriginal = rowNum ? baseDatosGoogle.find(function(c){ return c.rowNum==rowNum; }) : null;
-      let datosPayload = citaOriginal ? Object.assign({}, citaOriginal) : {};
-      datosPayload.rowNum   = rowNum; datosPayload.fecha  = fecha;
-      datosPayload.tecnico  = tecnico; datosPayload.espacio = espacioFinal;
-      if (rolUsuario==='tecnico' && citaOriginal) {
-        camposPermitidosTecnico.forEach(function(idCam) { let campoKey=idCam.replace('form_',''); let el=document.getElementById(idCam); if(el) datosPayload[campoKey]=el.value; });
+
+      const btn = document.getElementById('btnGuardarRegistro'); btn.innerHTML="Guardando..."; btn.disabled=true;
+      const citaOrig = rowNum ? _idxPorRowNum[rowNum] : null;  // OPTIMIZACIÓN: O(1)
+      let payload = citaOrig ? Object.assign({},citaOrig) : {};
+      payload.rowNum=rowNum; payload.fecha=fecha; payload.tecnico=tecnico; payload.espacio=espacioFinal;
+
+      if (rolUsuario==='tecnico' && citaOrig) {
+        camposPermitidosTecnico.forEach(id => { const el=document.getElementById(id); if(el) payload[id.replace('form_','')]=el.value; });
       } else {
-        const mapeoForm = {
-          'motivo':'form_motivo','horario':'form_horario','nombredelcliente':'form_nombredelcliente','linkCliente':'form_link_cliente',
-          'telefono':'form_telefono','ip':'form_ip','calleynumero':'form_calleynumero','coloniaofracc':'form_coloniaofracc',
-          'coordenadasoentrecalles':'form_coordenadasoentrecalles','calleynumero2':'form_calleynumero2','coloniaofracc2':'form_coloniaofracc2',
-          'coordenadasoentrecalles2':'form_coordenadasoentrecalles2','agente':'form_agente','plan':'form_plan','confirmada':'form_confirmada',
-          'serealizo':'form_serealizo','yafuecliente':'form_yafuecliente','bienvenida':'form_bienvenida',
-          'pormediosediocuentadenosotros':'form_pormediosediocuentadenosotros','otroscual':'form_otroscual',
-          'monto':'form_monto','comentarios':'form_comentarios','comentarioscat':'form_comentarioscat',
-          'comentariosdeltecnico':'form_comentariosdeltecnico','reportetecnico':'form_reportetecnico'
-        };
-        for (let prop in mapeoForm) { let el=document.getElementById(mapeoForm[prop]); if(el) datosPayload[prop]=el.value; }
+        const mapa = { motivo:'form_motivo', horario:'form_horario', nombredelcliente:'form_nombredelcliente', linkCliente:'form_link_cliente', telefono:'form_telefono', ip:'form_ip', calleynumero:'form_calleynumero', coloniaofracc:'form_coloniaofracc', coordenadasoentrecalles:'form_coordenadasoentrecalles', calleynumero2:'form_calleynumero2', coloniaofracc2:'form_coloniaofracc2', coordenadasoentrecalles2:'form_coordenadasoentrecalles2', agente:'form_agente', plan:'form_plan', confirmada:'form_confirmada', serealizo:'form_serealizo', yafuecliente:'form_yafuecliente', bienvenida:'form_bienvenida', pormediosediocuentadenosotros:'form_pormediosediocuentadenosotros', otroscual:'form_otroscual', monto:'form_monto', comentarios:'form_comentarios', comentarioscat:'form_comentarioscat', comentariosdeltecnico:'form_comentariosdeltecnico', reportetecnico:'form_reportetecnico' };
+        Object.entries(mapa).forEach(([k,id]) => { const el=document.getElementById(id); if(el) payload[k]=el.value; });
       }
-      datosPayload.usuario_movimiento = safeSession.getItem('nombre_usuario') || safeSession.getItem('sesion_activa');
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
+      payload.usuario_movimiento = safeSession.getItem('nombre_usuario') || safeSession.getItem('sesion_activa');
+
+      if (typeof google !== 'undefined' && google.script?.run) {
         google.script.run
-          .withSuccessHandler(function(res){ if(res.status==='success'){ cerrarModal(); sincronizarDatos(); } else alert("Error: "+res.message); btn.innerHTML="Guardar Cambios"; btn.disabled=false; })
-          .withFailureHandler(function(err){ alert("Error de conexión: "+err); btn.innerHTML="Guardar Cambios"; btn.disabled=false; })
-          .guardarRegistroAgenda(datosPayload);
+          .withSuccessHandler(res => { if(res.status==='success'){cerrarModal();sincronizarDatos();}else alert("Error: "+res.message); btn.innerHTML="Guardar Cambios"; btn.disabled=false; })
+          .withFailureHandler(err  => { alert("Error de conexión: "+err); btn.innerHTML="Guardar Cambios"; btn.disabled=false; })
+          .guardarRegistroAgenda(payload);
       }
     }
 
     function duplicarRegistroBD() {
       const rowNum = document.getElementById('form_rownum').value; if(!rowNum) return;
-      let fechaActual = document.getElementById('form_fecha').value;
-      let nuevaFecha  = prompt("Para duplicar este registro, ingresa la fecha destino (Formato: AAAA-MM-DD):", fechaActual);
-      if (!nuevaFecha || nuevaFecha.trim()==="") return;
+      const fechaActual = document.getElementById('form_fecha').value;
+      let nuevaFecha = prompt("Para duplicar este registro, ingresa la fecha destino (Formato: AAAA-MM-DD):", fechaActual);
+      if (!nuevaFecha?.trim()) return;
       if (!/^\d{4}-\d{2}-\d{2}$/.test(nuevaFecha.trim())) { alert("⚠️ Formato de fecha inválido. Por favor usa AAAA-MM-DD."); return; }
       if (!confirm("¿Estás seguro de que deseas duplicar este registro para el día "+nuevaFecha.trim()+"?")) return;
-      let citaOriginal = baseDatosGoogle.find(function(c){ return c.rowNum==rowNum; }); if(!citaOriginal) return;
-      let datosPayload = Object.assign({}, citaOriginal);
-      delete datosPayload.rowNum; datosPayload.fecha = nuevaFecha.trim(); delete datosPayload.espacio;
-      datosPayload.usuario_movimiento = (safeSession.getItem('nombre_usuario')||safeSession.getItem('sesion_activa'))+" (Duplicado)";
-      const btn = document.getElementById('btnDuplicarRegistro'); const textoOriginal = btn.innerHTML;
-      btn.innerHTML = "⏳ Duplicando..."; btn.disabled = true;
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
+      const citaOrig = _idxPorRowNum[rowNum]; if(!citaOrig) return;  // OPTIMIZACIÓN: O(1)
+      let payload = Object.assign({},citaOrig); delete payload.rowNum; payload.fecha=nuevaFecha.trim(); delete payload.espacio;
+      payload.usuario_movimiento = (safeSession.getItem('nombre_usuario')||safeSession.getItem('sesion_activa')) + " (Duplicado)";
+      const btn=document.getElementById('btnDuplicarRegistro'), orig=btn.innerHTML;
+      btn.innerHTML="⏳ Duplicando..."; btn.disabled=true;
+      if (typeof google !== 'undefined' && google.script?.run) {
         google.script.run
-          .withSuccessHandler(function(res){ if(res.status==='success'){ alert("✅ Registro duplicado exitosamente al "+nuevaFecha.trim()); cerrarModal(); sincronizarDatos(); } else { alert("Error al duplicar: "+res.message); } btn.innerHTML=textoOriginal; btn.disabled=false; })
-          .withFailureHandler(function(err){ alert("Error de conexión al duplicar: "+err); btn.innerHTML=textoOriginal; btn.disabled=false; })
-          .guardarRegistroAgenda(datosPayload);
+          .withSuccessHandler(res => { if(res.status==='success'){alert("✅ Registro duplicado exitosamente al "+nuevaFecha.trim()); cerrarModal(); sincronizarDatos();}else alert("Error al duplicar: "+res.message); btn.innerHTML=orig; btn.disabled=false; })
+          .withFailureHandler(err  => { alert("Error de conexión al duplicar: "+err); btn.innerHTML=orig; btn.disabled=false; })
+          .guardarRegistroAgenda(payload);
       }
     }
 
     function eliminarRegistroBD() {
       if(!confirm("¿Estás seguro de eliminar este registro?")) return;
-      const rowNum  = document.getElementById('form_rownum').value; if(!rowNum) return;
-      const usuario = safeSession.getItem('nombre_usuario') || safeSession.getItem('sesion_activa');
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
+      const rowNum=document.getElementById('form_rownum').value; if(!rowNum) return;
+      const usuario=safeSession.getItem('nombre_usuario')||safeSession.getItem('sesion_activa');
+      if (typeof google !== 'undefined' && google.script?.run) {
         google.script.run
-          .withSuccessHandler(function(res){ if(res.status==='success'){ cerrarModal(); sincronizarDatos(); } else alert("Error: "+res.message); })
-          .withFailureHandler(function(err){ alert("Error de conexión: "+err); })
+          .withSuccessHandler(res => { if(res.status==='success'){cerrarModal();sincronizarDatos();}else alert("Error: "+res.message); })
+          .withFailureHandler(err  => { alert("Error de conexión: "+err); })
           .eliminarRegistroAgenda(rowNum, usuario);
       }
     }
@@ -1179,393 +1197,372 @@
     function cerrarModal() { document.getElementById('modalRegistro').classList.add('hidden'); }
 
     function abrirRutaMapa(cuadrilla, fecha) {
-      let citas = baseDatosGoogle.filter(function(c){ return c.tecnico===cuadrilla && c.fecha===fecha && ((c.coordenadasoentrecalles&&c.coordenadasoentrecalles.trim()!=="")||(c.coordenadasoentrecalles2&&c.coordenadasoentrecalles2.trim()!=="")); });
-      if (citas.length===0) { alert("No hay coordenadas registradas para mapear."); return; }
-      citas.sort(function(a,b){ return parseInt(a.espacio)-parseInt(b.espacio); });
-      let puntos = [];
-      citas.forEach(function(c){ if(c.coordenadasoentrecalles&&c.coordenadasoentrecalles.trim()!=="") puntos.push(encodeURIComponent(c.coordenadasoentrecalles.trim())); if(c.coordenadasoentrecalles2&&c.coordenadasoentrecalles2.trim()!=="") puntos.push(encodeURIComponent(c.coordenadasoentrecalles2.trim())); });
+      const citas = baseDatosGoogle.filter(c => c.tecnico===cuadrilla && c.fecha===fecha && (c.coordenadasoentrecalles||c.coordenadasoentrecalles2));
+      if(!citas.length) { alert("No hay coordenadas registradas para mapear."); return; }
+      citas.sort((a,b) => parseInt(a.espacio)-parseInt(b.espacio));
+      const puntos = [];
+      citas.forEach(c => {
+        if(c.coordenadasoentrecalles?.trim()) puntos.push(encodeURIComponent(c.coordenadasoentrecalles.trim()));
+        if(c.coordenadasoentrecalles2?.trim()) puntos.push(encodeURIComponent(c.coordenadasoentrecalles2.trim()));
+      });
       window.open("https://www.google.com/maps/dir/"+puntos.join("/"), '_blank');
     }
 
-    // OPT: poblarSelects con innerHTML + join — evita appendChild por opción
+    // OPTIMIZACIÓN: poblarSelects con DocumentFragment para cada select
     function poblarSelects() {
       const selects = {
         'form_tecnico':'config_lista_tecnicos','form_motivo':'config_lista_motivos','form_horario':'config_lista_horarios',
         'form_agente':'config_lista_agentes','form_coloniaofracc':'config_lista_colonias','form_coloniaofracc2':'config_lista_colonias',
         'form_plan':'config_lista_planes','form_confirmada':'config_lista_confirmada','form_serealizo':'config_lista_serealizo',
-        'form_yafuecliente':'config_lista_yafuecliente','form_bienvenida':'config_lista_bienvenida',
-        'form_pormediosediocuentadenosotros':'config_lista_medios'
+        'form_yafuecliente':'config_lista_yafuecliente','form_bienvenida':'config_lista_bienvenida','form_pormediosediocuentadenosotros':'config_lista_medios'
       };
-      for (let id in selects) {
-        let el = document.getElementById(id); if(!el) continue;
-        let valorAnterior = el.value;
-        let lista = [];
-        try { let stored = safeStorage.getItem(selects[id]); if(stored) lista = JSON.parse(stored); } catch(e){}
-        // OPT: construir HTML como cadena y asignar una sola vez
-        let inListaAnterior = false;
-        let opts = ['<option value="">Seleccione...</option>'];
-        lista.forEach(function(item) {
-          let esc = item.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-          opts.push('<option value="'+esc+'">'+esc+'</option>');
-          if (item === valorAnterior) inListaAnterior = true;
-        });
-        if (valorAnterior && !inListaAnterior) {
-          let esc2 = valorAnterior.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-          opts.push('<option value="'+esc2+'">'+esc2+'</option>');
+      // OPTIMIZACIÓN: cache de listas parseadas — evita JSON.parse repetido por cada select
+      const _lCache = {};
+      const _getLista = k => { if(!_lCache[k]) { try { _lCache[k]=JSON.parse(safeStorage.getItem(k)||'[]'); }catch(e){_lCache[k]=[];} } return _lCache[k]; };
+
+      Object.entries(selects).forEach(([id, confKey]) => {
+        const el = document.getElementById(id); if(!el) return;
+        const prevVal = el.value;
+        const frag = document.createDocumentFragment();
+        const defOpt = document.createElement('option'); defOpt.value=''; defOpt.innerText='Seleccione...'; frag.appendChild(defOpt);
+        _getLista(confKey).forEach(item => { const opt=document.createElement('option'); opt.value=item; opt.innerText=item; frag.appendChild(opt); });
+        el.innerHTML=''; el.appendChild(frag);
+        if (prevVal) {
+          let existe = false;
+          for(let i=0;i<el.options.length;i++) { if(el.options[i].value===prevVal){existe=true;break;} }
+          if(!existe) { const o=document.createElement('option'); o.value=prevVal; o.innerText=prevVal; el.appendChild(o); }
+          el.value=prevVal;
         }
-        el.innerHTML = opts.join('');
-        if (valorAnterior) el.value = valorAnterior;
-      }
+      });
     }
 
-    function dragStart(ev, rowNum) { window.isDragging = true; ev.dataTransfer.setData("text/plain", rowNum); }
+    function dragStart(ev, rowNum) { window.isDragging=true; ev.dataTransfer.setData("text/plain", rowNum); }
     function dragOver(ev)  { ev.preventDefault(); ev.currentTarget.classList.add('drag-over'); }
     function dragLeave(ev) { ev.currentTarget.classList.remove('drag-over'); }
 
     function drop(ev, nuevaCuadrilla, nuevoEspacio) {
-      window.isDragging = false;
-      ev.preventDefault(); ev.currentTarget.classList.remove('drag-over');
-      const rowNum = ev.dataTransfer.getData("text/plain"); if (!rowNum) return;
-      const citaIndex = baseDatosGoogle.findIndex(function(c){ return c.rowNum==rowNum; }); if(citaIndex===-1) return;
-      let cita = baseDatosGoogle[citaIndex];
-      const espacioOcupado = baseDatosGoogle.some(function(c){ return c.fecha===cita.fecha && c.tecnico===nuevaCuadrilla && c.espacio==nuevoEspacio && c.rowNum!=cita.rowNum; });
-      if (espacioOcupado) { alert("⚠️ Acción denegada: Este espacio ya está ocupado."); return; }
-      if (cita.horario && cita.horario.trim().toLowerCase().indexOf("disponibilidad")===-1) {
-        const horarioDuplicado = baseDatosGoogle.some(function(c){ return c.fecha===cita.fecha && c.tecnico===nuevaCuadrilla && c.horario && c.horario.trim().toLowerCase()===cita.horario.trim().toLowerCase() && c.rowNum!=cita.rowNum; });
-        if (horarioDuplicado) { alert("⚠️ Advertencia: El horario '"+cita.horario+"' ya está asignado a la cuadrilla '"+nuevaCuadrilla+"'. Movimiento cancelado."); return; }
+      window.isDragging=false; ev.preventDefault(); ev.currentTarget.classList.remove('drag-over');
+      const rowNum = ev.dataTransfer.getData("text/plain"); if(!rowNum) return;
+      const cita = _idxPorRowNum[rowNum]; if(!cita) return;  // OPTIMIZACIÓN: O(1)
+      const ocupado = baseDatosGoogle.some(c => c.fecha===cita.fecha && c.tecnico===nuevaCuadrilla && c.espacio==nuevoEspacio && c.rowNum!=cita.rowNum);
+      if(ocupado) { alert("⚠️ Acción denegada: Este espacio ya está ocupado."); return; }
+      if (cita.horario && !cita.horario.trim().toLowerCase().includes('disponibilidad')) {
+        const hl = cita.horario.trim().toLowerCase();
+        if(baseDatosGoogle.some(c => c.fecha===cita.fecha && c.tecnico===nuevaCuadrilla && (c.horario||"").trim().toLowerCase()===hl && c.rowNum!=cita.rowNum)) {
+          alert(`⚠️ Advertencia: El horario '${cita.horario}' ya está asignado a la cuadrilla '${nuevaCuadrilla}'. Movimiento cancelado.`); return;
+        }
       }
-      cita.tecnico = nuevaCuadrilla; cita.espacio = nuevoEspacio;
-      cita.usuario_movimiento = safeSession.getItem('nombre_usuario') || safeSession.getItem('sesion_activa');
+      cita.tecnico=nuevaCuadrilla; cita.espacio=nuevoEspacio; cita.usuario_movimiento=safeSession.getItem('nombre_usuario')||safeSession.getItem('sesion_activa');
       renderizarAgenda();
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run.withFailureHandler(function(err){ alert("Error al mover: "+err); sincronizarDatos(); }).guardarRegistroAgenda(cita);
+      if(typeof google !== 'undefined' && google.script?.run) {
+        google.script.run.withFailureHandler(err=>{alert("Error al mover: "+err);sincronizarDatos();}).guardarRegistroAgenda(cita);
       }
     }
 
     function bloquearCamposParaTecnico() {
-      const formElements = document.getElementById('formularioAgenda').elements;
-      for(let i=0; i<formElements.length; i++) {
-        let el=formElements[i];
+      const els = document.getElementById('formularioAgenda').elements;
+      for(let i=0;i<els.length;i++) {
+        const el=els[i];
         if(el.type==='button'||el.type==='submit'||el.type==='hidden') continue;
-        if(camposPermitidosTecnico.indexOf(el.id)===-1) { el.readOnly=true; if(el.tagName==='SELECT') el.disabled=true; el.classList.add('campo-bloqueado'); }
-        else { el.readOnly=false; el.disabled=false; el.classList.remove('campo-bloqueado'); }
+        const perm = camposPermitidosTecnico.includes(el.id);
+        el.readOnly = !perm; if(el.tagName==='SELECT') el.disabled=!perm;
+        el.classList.toggle('campo-bloqueado', !perm);
       }
     }
 
     function desbloquearCamposFormulario() {
-      const formElements = document.getElementById('formularioAgenda').elements;
-      for(let i=0; i<formElements.length; i++) { let el=formElements[i]; el.readOnly=false; el.disabled=false; el.classList.remove('campo-bloqueado'); }
+      const els = document.getElementById('formularioAgenda').elements;
+      for(let i=0;i<els.length;i++) { const el=els[i]; el.readOnly=false; el.disabled=false; el.classList.remove('campo-bloqueado'); }
     }
 
     function cambioDeFechaFiltro() { renderizarAgenda(); }
 
-    function modificarEspacios(fecha, cuadrilla, operacion) {
-      if (!espaciosPorFecha[fecha]) espaciosPorFecha[fecha] = {};
-      if (!espaciosPorFecha[fecha][cuadrilla]) espaciosPorFecha[fecha][cuadrilla] = 4;
-      if (operacion==='sumar') espaciosPorFecha[fecha][cuadrilla]++;
-      else if (operacion==='restar' && espaciosPorFecha[fecha][cuadrilla]>1) espaciosPorFecha[fecha][cuadrilla]--;
+    function modificarEspacios(fecha, cuadrilla, op) {
+      if(!espaciosPorFecha[fecha]) espaciosPorFecha[fecha]={};
+      if(!espaciosPorFecha[fecha][cuadrilla]) espaciosPorFecha[fecha][cuadrilla]=4;
+      if(op==='sumar') espaciosPorFecha[fecha][cuadrilla]++;
+      else if(op==='restar' && espaciosPorFecha[fecha][cuadrilla]>1) espaciosPorFecha[fecha][cuadrilla]--;
       safeStorage.setItem('espacios_por_fecha_v4', JSON.stringify(espaciosPorFecha)); renderizarAgenda();
     }
 
     function agregarCuadrillaFecha() {
       const input = document.getElementById('inputNuevaCuadrilla');
       const nueva = normalizarTecnico(input.value); if(!nueva) return;
-      const fechaActual = document.getElementById('filtroFecha').value;
-      if (!espaciosPorFecha[fechaActual]) espaciosPorFecha[fechaActual] = {};
-      if (!espaciosPorFecha[fechaActual][nueva]) { espaciosPorFecha[fechaActual][nueva] = 4; }
-      window.cuadrillasManuales = window.cuadrillasManuales || {};
-      if (!window.cuadrillasManuales[fechaActual]) window.cuadrillasManuales[fechaActual] = {};
-      window.cuadrillasManuales[fechaActual][nueva] = true;
-      if (window.cuadrillasOcultas && window.cuadrillasOcultas[fechaActual]) { delete window.cuadrillasOcultas[fechaActual][nueva]; }
-      safeStorage.setItem('espacios_por_fecha_v4', JSON.stringify(espaciosPorFecha)); renderizarAgenda(); input.value = '';
+      const fa = document.getElementById('filtroFecha').value;
+      if(!espaciosPorFecha[fa]) espaciosPorFecha[fa]={};
+      if(!espaciosPorFecha[fa][nueva]) espaciosPorFecha[fa][nueva]=4;
+      window.cuadrillasManuales=window.cuadrillasManuales||{}; if(!window.cuadrillasManuales[fa]) window.cuadrillasManuales[fa]={};
+      window.cuadrillasManuales[fa][nueva]=true;
+      if(window.cuadrillasOcultas?.[fa]) delete window.cuadrillasOcultas[fa][nueva];
+      safeStorage.setItem('espacios_por_fecha_v4',JSON.stringify(espaciosPorFecha)); renderizarAgenda(); input.value='';
     }
 
-    function gestionarLista(configKey, titulo) {
-      let lista = [];
-      try { let d=safeStorage.getItem(configKey); if(d) lista=JSON.parse(d); } catch(e){}
-      let nuevaLista = prompt("Editar "+titulo+" (separa las opciones por comas):", lista.join(", "));
-      if(nuevaLista !== null) {
-        let arr = nuevaLista.split(',').map(function(s){ let val=s.trim(); if(configKey==='config_lista_tecnicos') val=normalizarTecnico(val); return val; }).filter(function(s){ return s; });
-        safeStorage.setItem(configKey, JSON.stringify(arr)); poblarSelects();
+    function gestionarLista(key, titulo) {
+      let lista=[]; try { lista=JSON.parse(safeStorage.getItem(key)||'[]'); }catch(e){}
+      const nuevo = prompt("Editar "+titulo+" (separa las opciones por comas):", lista.join(", "));
+      if(nuevo!==null) {
+        const arr=nuevo.split(',').map(s=>{ let v=s.trim(); if(key==='config_lista_tecnicos') v=normalizarTecnico(v); return v; }).filter(Boolean);
+        safeStorage.setItem(key, JSON.stringify(arr)); poblarSelects();
       }
     }
 
+    // ==========================================
+    // VISTA GENERAL ADMIN
+    // ==========================================
     let baseDatosCompletaAdmin = { headers:[], rows:[] };
-
     function abrirVistaGeneralAdmin() {
-      if (rolUsuario !== 'admin') return;
+      if(rolUsuario!=='admin') return;
       document.getElementById('vistaAdminFiltros').classList.remove('hidden'); sincronizarVistaAdmin();
     }
-
     function sincronizarVistaAdmin() {
-      const btn = document.getElementById('btnSincronizarAdminFiltros');
-      if (btn) btn.innerHTML = "⏳ Sincronizando...";
+      const btn=document.getElementById('btnSincronizarAdminFiltros'); if(btn) btn.innerHTML="⏳ Sincronizando...";
       document.getElementById('cargandoTablaAdmin').classList.remove('hidden');
       document.getElementById('tablaAdminCompleta').classList.add('hidden');
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
+      if(typeof google !== 'undefined' && google.script?.run) {
         google.script.run
-          .withSuccessHandler(function(response) {
-            if (btn) btn.innerHTML = "🔄 Sincronizar";
+          .withSuccessHandler(res => {
+            if(btn) btn.innerHTML="🔄 Sincronizar";
             document.getElementById('cargandoTablaAdmin').classList.add('hidden');
             document.getElementById('tablaAdminCompleta').classList.remove('hidden');
-            if (response.status==='success') { baseDatosCompletaAdmin=response; construirTablaFiltrosAdmin(); } else { alert('Fallo: '+response.message); }
+            if(res.status==='success'){baseDatosCompletaAdmin=res; construirTablaFiltrosAdmin();}
+            else alert('Fallo: '+res.message);
           })
-          .withFailureHandler(function(err){ if (btn) btn.innerHTML = "🔄 Sincronizar"; document.getElementById('cargandoTablaAdmin').classList.add('hidden'); alert('Error de conexión: '+err); })
+          .withFailureHandler(err => { if(btn) btn.innerHTML="🔄 Sincronizar"; document.getElementById('cargandoTablaAdmin').classList.add('hidden'); alert('Error de conexión: '+err); })
           .obtenerTodoContenidoBaseDatos();
       }
     }
-
     function cerrarVistaGeneralAdmin() { document.getElementById('vistaAdminFiltros').classList.add('hidden'); }
 
     function construirTablaFiltrosAdmin() {
-      _cachedFilterData = null; // OPT: invalidar caché de filtros al reconstruir tabla
       const thead = document.getElementById('tablaAdminHeader');
       const tbody = document.getElementById('tablaAdminBody');
-      thead.innerHTML = ''; tbody.innerHTML = '';
-      if (!baseDatosCompletaAdmin.headers || baseDatosCompletaAdmin.headers.length === 0) return;
+      thead.innerHTML=''; tbody.innerHTML='';
+      if(!baseDatosCompletaAdmin.headers?.length) return;
 
-      // Construir filas de cabecera con DOM (necesario para listeners de filtros)
-      const filaTitulos = document.createElement('tr');
-      const filaFiltros = document.createElement('tr');
-      filaFiltros.className = "bg-slate-50 border-b border-indigo-100 shadow-sm";
+      // OPTIMIZACIÓN: DocumentFragment para thead y tbody
+      const fragHead = document.createDocumentFragment();
+      const trTit  = document.createElement('tr');
+      const trFilt = document.createElement('tr'); trFilt.className="bg-slate-50 border-b border-indigo-100 shadow-sm";
 
-      baseDatosCompletaAdmin.headers.forEach(function(header, index) {
-        const th = document.createElement('th');
-        th.className = "px-3 py-3 font-bold text-indigo-800 whitespace-nowrap uppercase tracking-wider border-b border-indigo-100 text-[11px] text-center";
-        th.textContent = header; filaTitulos.appendChild(th);
-
-        const thFiltro = document.createElement('th');
-        thFiltro.className = "px-2 py-1.5 border-b border-indigo-100";
-        if (header.toLowerCase().includes('fecha')) {
-          const divRange = document.createElement('div'); divRange.className = "flex flex-col gap-1 min-w-[110px]";
-          const inputInicio = document.createElement('input'); inputInicio.type="date"; inputInicio.id="filtro_admin_col_"+index+"_inicio"; inputInicio.title="Fecha Inicial"; inputInicio.className="w-full border border-slate-300 rounded px-1 py-0.5 text-[10px] focus:outline-none focus:border-indigo-500"; inputInicio.addEventListener('input', _ejecutarFiltrosAdminDebounced);
-          const inputFin    = document.createElement('input'); inputFin.type="date";   inputFin.id="filtro_admin_col_"+index+"_fin";    inputFin.title="Fecha Final";   inputFin.className="w-full border border-slate-300 rounded px-1 py-0.5 text-[10px] focus:outline-none focus:border-indigo-500";   inputFin.addEventListener('input', _ejecutarFiltrosAdminDebounced);
-          divRange.appendChild(inputInicio); divRange.appendChild(inputFin); thFiltro.appendChild(divRange);
+      baseDatosCompletaAdmin.headers.forEach((h,i) => {
+        const th=document.createElement('th'); th.className="px-3 py-3 font-bold text-indigo-800 whitespace-nowrap uppercase tracking-wider border-b border-indigo-100 text-[11px] text-center"; th.textContent=h; trTit.appendChild(th);
+        const thF=document.createElement('th'); thF.className="px-2 py-1.5 border-b border-indigo-100";
+        if(h.toLowerCase().includes('fecha')) {
+          const dv=document.createElement('div'); dv.className="flex flex-col gap-1 min-w-[110px]";
+          const iI=document.createElement('input'); iI.type="date"; iI.id=`fa_${i}_i`; iI.title="Fecha Inicial"; iI.className="w-full border border-slate-300 rounded px-1 py-0.5 text-[10px] focus:outline-none focus:border-indigo-500"; iI.addEventListener('input', ejecutarFiltrosAdmin);
+          const iF=document.createElement('input'); iF.type="date"; iF.id=`fa_${i}_f`; iF.title="Fecha Final";   iF.className="w-full border border-slate-300 rounded px-1 py-0.5 text-[10px] focus:outline-none focus:border-indigo-500"; iF.addEventListener('input', ejecutarFiltrosAdmin);
+          dv.append(iI,iF); thF.appendChild(dv);
         } else {
-          const inputTexto = document.createElement('input'); inputTexto.type="text"; inputTexto.id="filtro_admin_col_"+index; inputTexto.placeholder="Buscar..."; inputTexto.className="w-full border border-slate-300 rounded px-2 py-1 text-[11px] font-normal focus:outline-none focus:border-indigo-500 text-slate-700 text-center";
-          inputTexto.addEventListener('input', _ejecutarFiltrosAdminDebounced); // OPT: debounce 250ms
-          thFiltro.appendChild(inputTexto);
+          const inp=document.createElement('input'); inp.type="text"; inp.id=`fa_${i}`; inp.placeholder="Buscar..."; inp.className="w-full border border-slate-300 rounded px-2 py-1 text-[11px] font-normal focus:outline-none focus:border-indigo-500 text-slate-700 text-center"; inp.addEventListener('input', ejecutarFiltrosAdmin); thF.appendChild(inp);
         }
-        filaFiltros.appendChild(thFiltro);
+        trFilt.appendChild(thF);
       });
-      thead.appendChild(filaTitulos); thead.appendChild(filaFiltros);
+      fragHead.append(trTit, trFilt); thead.appendChild(fragHead);
 
-      // OPT: construir tbody como HTML string → una sola asignación de innerHTML
-      // vs. crear/append un elemento DOM por celda por fila (mucho más rápido para tablas grandes)
-      tbody.innerHTML = baseDatosCompletaAdmin.rows.map(function(row, rowIndex) {
-        return '<tr class="hover:bg-indigo-50 transition-colors cursor-pointer" id="fila_admin_raw_'+rowIndex+'" ondblclick="abrirModalEdicion('+(rowIndex+2)+')">'+
-          row.map(function(cellValue) {
-            var cv = (cellValue||'').toString();
-            var esc = cv.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-            return '<td class="px-3 py-2.5 whitespace-nowrap text-slate-600 max-w-[200px] truncate text-[11px] border-b border-slate-100" title="'+esc+'">'+esc+'</td>';
-          }).join('') +
-        '</tr>';
-      }).join('');
-
-      document.getElementById('totalFilasMostradas').textContent = 'Registros totales: '+baseDatosCompletaAdmin.rows.length;
+      // OPTIMIZACIÓN: construir tbody con DocumentFragment — evita reflow por cada fila
+      const fragBody = document.createDocumentFragment();
+      baseDatosCompletaAdmin.rows.forEach((row, ri) => {
+        const tr=document.createElement('tr'); tr.className="hover:bg-indigo-50 transition-colors cursor-pointer"; tr.id=`far_${ri}`;
+        tr.ondblclick=()=>abrirModalEdicion(ri+2);
+        row.forEach(v => { const td=document.createElement('td'); td.className="px-3 py-2.5 whitespace-nowrap text-slate-600 max-w-[200px] truncate text-[11px] border-b border-slate-100"; td.textContent=v||""; td.title=v||""; tr.appendChild(td); });
+        fragBody.appendChild(tr);
+      });
+      tbody.appendChild(fragBody);
+      document.getElementById('totalFilasMostradas').textContent=`Registros totales: ${baseDatosCompletaAdmin.rows.length}`;
     }
 
-    // OPT: función interna con caché de inputs + debounce aplicado al listener
+    // OPTIMIZACIÓN: ejecutarFiltrosAdmin — pre-compila RegExp fuera del loop de filas
     function ejecutarFiltrosAdmin() {
-      // OPT: construir caché de inputs solo la primera vez (evita getElementById por filtro por tecla)
-      if (!_cachedFilterData) {
-        _cachedFilterData = baseDatosCompletaAdmin.headers.map(function(header, index) {
-          if (header.toLowerCase().includes('fecha')) {
-            return { tipo:'fecha', elI: document.getElementById('filtro_admin_col_'+index+'_inicio'), elF: document.getElementById('filtro_admin_col_'+index+'_fin') };
-          } else {
-            return { tipo:'texto', el: document.getElementById('filtro_admin_col_'+index) };
-          }
-        });
-      }
-      const rowsData = baseDatosCompletaAdmin.rows;
-      let contadorVisibles = 0;
-      const filtrosActivos = _cachedFilterData.map(function(f) {
-        if (f.tipo==='fecha') {
-          return { tipo:'fecha', inicio: f.elI ? f.elI.value : '', fin: f.elF ? f.elF.value : '' };
+      const headers = baseDatosCompletaAdmin.headers;
+      const rows    = baseDatosCompletaAdmin.rows;
+      const filtros = [];
+
+      for(let i=0; i<headers.length; i++) {
+        const esFecha = headers[i].toLowerCase().includes('fecha');
+        if(esFecha) {
+          filtros[i]={ tipo:'fecha', inicio: document.getElementById(`fa_${i}_i`)?.value||"", fin: document.getElementById(`fa_${i}_f`)?.value||"" };
         } else {
-          const inputVal = f.el ? f.el.value.toLowerCase().trim() : '';
-          let regex = null;
-          if (inputVal) { const qEsc = inputVal.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); regex = new RegExp("(^|[\\s\\W_])"+qEsc+"([\\s\\W_]|$)","i"); }
-          return { tipo:'texto', query:inputVal, regex:regex };
+          const v=(document.getElementById(`fa_${i}`)?.value||"").toLowerCase().trim();
+          // OPTIMIZACIÓN: crear RegExp UNA vez por filtro, no por cada fila
+          let rx=null; if(v) { const esc=v.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); rx=new RegExp("(^|[\\s\\W_])"+esc+"([\\s\\W_]|$)","i"); }
+          filtros[i]={ tipo:'texto', q:v, rx };
         }
-      });
+      }
 
-      rowsData.forEach(function(row, rowIndex) {
-        let cumpleFiltros = true;
-        for (let index = 0; index < row.length; index++) {
-          const filtro    = filtrosActivos[index]; if (!filtro) continue;
-          const cellValue = (row[index]||"").toString().toLowerCase().trim();
-          if (filtro.tipo==='fecha') {
-            const cellDateStr = (row[index]||"").trim();
-            if (cellDateStr) { if (filtro.inicio && cellDateStr<filtro.inicio) { cumpleFiltros=false; break; } if (filtro.fin && cellDateStr>filtro.fin) { cumpleFiltros=false; break; } }
-            else if (filtro.inicio||filtro.fin) { cumpleFiltros=false; break; }
-          } else {
-            if (filtro.query) { const esIgualDirecto=(cellValue===filtro.query); if(!esIgualDirecto && filtro.regex && !filtro.regex.test(cellValue)){ cumpleFiltros=false; break; } }
+      let vis=0;
+      rows.forEach((row,ri) => {
+        let ok=true;
+        for(let i=0;i<row.length;i++) {
+          const f=filtros[i]; if(!f) continue;
+          const cv=(row[i]||"").toString().toLowerCase().trim();
+          if(f.tipo==='fecha') {
+            if(cv){ if(f.inicio&&cv<f.inicio){ok=false;break;} if(f.fin&&cv>f.fin){ok=false;break;} }
+            else if(f.inicio||f.fin){ok=false;break;}
+          } else if(f.q) {
+            if(cv!==f.q && !(f.rx&&f.rx.test(cv))){ok=false;break;}
           }
         }
-        const elemFila = document.getElementById('fila_admin_raw_'+rowIndex);
-        if (elemFila) { if (cumpleFiltros) { elemFila.classList.remove('hidden'); contadorVisibles++; } else { elemFila.classList.add('hidden'); } }
+        const el=document.getElementById(`far_${ri}`);
+        if(el){ el.classList.toggle('hidden',!ok); if(ok) vis++; }
       });
-      document.getElementById('totalFilasMostradas').textContent = 'Registros filtrados: '+contadorVisibles+' de '+rowsData.length;
+      document.getElementById('totalFilasMostradas').textContent=`Registros filtrados: ${vis} de ${rows.length}`;
     }
-    // OPT: debounce de 250ms — evita re-filtrar en cada pulsación de tecla
-    const _ejecutarFiltrosAdminDebounced = _debounce(ejecutarFiltrosAdmin, 250);
 
+    // ==========================================
+    // DASHBOARD
+    // ==========================================
     function abrirDashboard() {
       document.getElementById('vistaDashboardFiltros').classList.remove('hidden');
-      if (!datosDashboardGral) { sincronizarDashboard(); } else { renderizarDashboardGrid(); }
+      if(!datosDashboardGral) sincronizarDashboard(); else renderizarDashboardGrid();
     }
     function cerrarDashboard() { document.getElementById('vistaDashboardFiltros').classList.add('hidden'); }
+
+    function sincronizarDashboard() {
+      const btn=document.getElementById('btnSincronizarDashboard'); if(btn) btn.innerHTML="⏳ Cargando Datos...";
+      if(typeof google !== 'undefined' && google.script?.run) {
+        google.script.run
+          .withSuccessHandler(res => {
+            if(btn) btn.innerHTML="🔄 Actualizar Datos";
+            if(res.status==='success'){
+              datosDashboardGral=res.data;
+              if(res.data.fechas){ document.getElementById('dashFechaD1').value=res.data.fechas.d1||''; document.getElementById('dashFechaG1').value=res.data.fechas.g1||''; }
+              renderizarDashboardGrid();
+            } else alert("Error cargando dashboard: "+res.message);
+          })
+          .withFailureHandler(err=>{ if(btn) btn.innerHTML="🔄 Actualizar Datos"; alert("Error de red: "+err); })
+          .obtenerDatosDashboard();
+      }
+    }
 
     function abrirAuditoriaEliminados() { document.getElementById('vistaAuditoriaEliminados').classList.remove('hidden'); cargarAuditoria(); }
     function cerrarAuditoriaEliminados() { document.getElementById('vistaAuditoriaEliminados').classList.add('hidden'); }
 
     function cargarAuditoria() {
       document.getElementById('cargandoAuditoria').classList.remove('hidden');
-      document.getElementById('cargandoAuditoria').textContent = 'Cargando registros...';
+      document.getElementById('cargandoAuditoria').textContent='Cargando registros...';
       document.getElementById('tablaAuditoria').classList.add('hidden');
-      document.getElementById('totalAuditoria').textContent = '';
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
+      document.getElementById('totalAuditoria').textContent='';
+      if(typeof google !== 'undefined' && google.script?.run) {
         google.script.run
-          .withSuccessHandler(function(datos) {
+          .withSuccessHandler(datos => {
             document.getElementById('cargandoAuditoria').classList.add('hidden');
-            if (!datos || !datos.headers || !datos.rows || datos.rows.length===0) {
-              document.getElementById('cargandoAuditoria').textContent = 'No hay registros en la auditoría todavía.';
-              document.getElementById('cargandoAuditoria').classList.remove('hidden'); return;
+            if(!datos?.headers?.length || !datos.rows?.length) {
+              document.getElementById('cargandoAuditoria').textContent='No hay registros en la auditoría todavía.'; document.getElementById('cargandoAuditoria').classList.remove('hidden'); return;
             }
-            document.getElementById('tablaAuditoriaHeader').innerHTML =
-              '<tr><th class="px-4 py-3 font-bold text-xs uppercase tracking-wider border-b border-red-100 sticky left-0 bg-red-50 z-10">Acción</th>'+
-              datos.headers.map(function(h){ return '<th class="px-4 py-3 font-bold text-xs uppercase tracking-wider border-b border-red-100">'+h+'</th>'; }).join('')+'</tr>';
-
-            document.getElementById('tablaAuditoriaBody').innerHTML = datos.rows.map(function(entry, idx) {
-              var row = entry.cells, auditRowNum = entry.auditRowNum;
-              var yaRestaurado = row.some(function(cell){ return cell && cell.toString().indexOf('✅')===0; });
-              var btnRestaurar = yaRestaurado
-                ? '<span class="text-emerald-600 font-bold text-xs whitespace-nowrap">✅ Restaurado</span>'
-                : '<button onclick="restaurarRegistroAuditoria('+auditRowNum+', this)" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-1 px-3 rounded-lg transition-colors whitespace-nowrap shadow-sm">🔄 Restaurar</button>';
-              return '<tr class="'+(idx%2===0?'bg-white':'bg-red-50/40')+' hover:bg-red-50 transition-colors">'+
-                '<td class="px-3 py-2 sticky left-0 '+(idx%2===0?'bg-white':'bg-red-50')+' z-[1]">'+btnRestaurar+'</td>'+
-                row.map(function(cell){ var cv=(cell||'').toString().replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); return '<td class="px-4 py-2 text-slate-700 whitespace-nowrap max-w-[220px] overflow-hidden text-ellipsis" title="'+cv+'">'+(cell||'-')+'</td>'; }).join('')+
-              '</tr>';
-            }).join('');
+            const thead=document.getElementById('tablaAuditoriaHeader');
+            const tbody=document.getElementById('tablaAuditoriaBody');
+            thead.innerHTML=`<tr><th class="px-4 py-3 font-bold text-xs uppercase tracking-wider border-b border-red-100 sticky left-0 bg-red-50 z-10">Acción</th>${datos.headers.map(h=>`<th class="px-4 py-3 font-bold text-xs uppercase tracking-wider border-b border-red-100">${h}</th>`).join('')}</tr>`;
+            // OPTIMIZACIÓN: DocumentFragment para tbody de auditoría
+            const frag = document.createDocumentFragment();
+            datos.rows.forEach((entry,idx) => {
+              const row=entry.cells, arn=entry.auditRowNum;
+              const rest=row.some(c=>c&&c.toString().startsWith('✅'));
+              const tr=document.createElement('tr'); tr.className=(idx%2===0?'bg-white':'bg-red-50/40')+' hover:bg-red-50 transition-colors';
+              const tdBtn=document.createElement('td'); tdBtn.className='px-3 py-2 sticky left-0 '+(idx%2===0?'bg-white':'bg-red-50')+' z-[1]';
+              if(rest) { tdBtn.innerHTML='<span class="text-emerald-600 font-bold text-xs whitespace-nowrap">✅ Restaurado</span>'; }
+              else { tdBtn.innerHTML=`<button onclick="restaurarRegistroAuditoria(${arn},this)" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-1 px-3 rounded-lg transition-colors whitespace-nowrap shadow-sm">🔄 Restaurar</button>`; }
+              tr.appendChild(tdBtn);
+              row.forEach(cell => { const td=document.createElement('td'); td.className="px-4 py-2 text-slate-700 whitespace-nowrap max-w-[220px] overflow-hidden text-ellipsis"; td.title=cell||''; td.textContent=cell||'-'; tr.appendChild(td); });
+              frag.appendChild(tr);
+            });
+            tbody.innerHTML=''; tbody.appendChild(frag);
             document.getElementById('tablaAuditoria').classList.remove('hidden');
-            document.getElementById('totalAuditoria').textContent = datos.rows.length+' registro(s) encontrado(s)';
+            document.getElementById('totalAuditoria').textContent=datos.rows.length+' registro(s) encontrado(s)';
           })
-          .withFailureHandler(function(err){ document.getElementById('cargandoAuditoria').classList.remove('hidden'); document.getElementById('cargandoAuditoria').textContent='Error al cargar la auditoría: '+err; })
+          .withFailureHandler(err => { document.getElementById('cargandoAuditoria').classList.remove('hidden'); document.getElementById('cargandoAuditoria').textContent='Error al cargar la auditoría: '+err; })
           .obtenerAuditoriaEliminados();
       }
     }
 
     function restaurarRegistroAuditoria(auditRowNum, btnEl) {
-      if (!confirm('¿Estás seguro de que deseas restaurar este registro? Se volverá a agregar a la Agenda como un nuevo registro.')) return;
-      var usuario = safeSession.getItem('nombre_usuario') || safeSession.getItem('sesion_activa') || 'Desconocido';
-      btnEl.disabled=true; btnEl.textContent='Restaurando...';
-      btnEl.classList.remove('bg-emerald-600','hover:bg-emerald-500'); btnEl.classList.add('bg-slate-400');
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
+      if(!confirm('¿Estás seguro de que deseas restaurar este registro? Se volverá a agregar a la Agenda como un nuevo registro.')) return;
+      const usuario=safeSession.getItem('nombre_usuario')||safeSession.getItem('sesion_activa')||'Desconocido';
+      btnEl.disabled=true; btnEl.textContent='Restaurando...'; btnEl.className='bg-slate-400 text-white font-bold text-xs py-1 px-3 rounded-lg whitespace-nowrap';
+      if(typeof google !== 'undefined' && google.script?.run) {
         google.script.run
-          .withSuccessHandler(function(res) {
-            if (res && res.status==='success') { btnEl.outerHTML='<span class="text-emerald-600 font-bold text-xs whitespace-nowrap">✅ Restaurado</span>'; sincronizarDatos(); alert('✅ Registro restaurado correctamente en la Agenda.'); }
-            else { btnEl.disabled=false; btnEl.textContent='🔄 Restaurar'; btnEl.classList.add('bg-emerald-600','hover:bg-emerald-500'); btnEl.classList.remove('bg-slate-400'); alert('Error al restaurar: '+(res?res.message:'Respuesta vacía')); }
+          .withSuccessHandler(res => {
+            if(res?.status==='success') { btnEl.outerHTML='<span class="text-emerald-600 font-bold text-xs whitespace-nowrap">✅ Restaurado</span>'; sincronizarDatos(); alert('✅ Registro restaurado correctamente en la Agenda.'); }
+            else { btnEl.disabled=false; btnEl.textContent='🔄 Restaurar'; btnEl.className='bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-1 px-3 rounded-lg transition-colors whitespace-nowrap shadow-sm'; alert('Error al restaurar: '+(res?res.message:'Respuesta vacía')); }
           })
-          .withFailureHandler(function(err){ btnEl.disabled=false; btnEl.textContent='🔄 Restaurar'; btnEl.classList.add('bg-emerald-600','hover:bg-emerald-500'); btnEl.classList.remove('bg-slate-400'); alert('Error de conexión al restaurar: '+err); })
+          .withFailureHandler(err => { btnEl.disabled=false; btnEl.textContent='🔄 Restaurar'; btnEl.className='bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-1 px-3 rounded-lg transition-colors whitespace-nowrap shadow-sm'; alert('Error de conexión al restaurar: '+err); })
           .restaurarRegistroAgenda(auditRowNum, usuario);
       }
     }
 
     function guardarFechasDashboard() {
-      const d1  = document.getElementById('dashFechaD1').value;
-      const g1  = document.getElementById('dashFechaG1').value;
-      const btn = document.getElementById('btnGuardarFechasDash');
-      const txtOrig = btn.innerHTML;
-      btn.innerHTML = "⏳..."; btn.disabled = true;
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
+      const d1=document.getElementById('dashFechaD1').value, g1=document.getElementById('dashFechaG1').value;
+      const btn=document.getElementById('btnGuardarFechasDash'), orig=btn.innerHTML;
+      btn.innerHTML="⏳..."; btn.disabled=true;
+      if(typeof google !== 'undefined' && google.script?.run) {
         google.script.run
-          .withSuccessHandler(function(res){ btn.innerHTML=txtOrig; btn.disabled=false; if(res.status==='success'){ alert("Fechas guardadas correctamente."); sincronizarDashboard(); } else { alert("Error al guardar fechas: "+res.message); } })
-          .withFailureHandler(function(err){ btn.innerHTML=txtOrig; btn.disabled=false; alert("Error de red: "+err); })
+          .withSuccessHandler(res => { btn.innerHTML=orig; btn.disabled=false; if(res.status==='success'){alert("Fechas guardadas correctamente."); sincronizarDashboard();}else alert("Error al guardar fechas: "+res.message); })
+          .withFailureHandler(err => { btn.innerHTML=orig; btn.disabled=false; alert("Error de red: "+err); })
           .actualizarFechasDashboard(d1, g1);
-      } else { btn.innerHTML=txtOrig; btn.disabled=false; alert("Entorno local detectado. Requiere Google Apps Script."); }
+      } else { btn.innerHTML=orig; btn.disabled=false; alert("Entorno local detectado. Requiere Google Apps Script."); }
     }
 
-    function sincronizarDashboard() {
-      const btn = document.getElementById('btnSincronizarDashboard');
-      if (btn) btn.innerHTML = "⏳ Cargando Datos...";
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(function(res) {
-            if (btn) btn.innerHTML = "🔄 Actualizar Datos";
-            if (res.status==='success') {
-              datosDashboardGral = res.data;
-              if (res.data.fechas) { document.getElementById('dashFechaD1').value=res.data.fechas.d1||''; document.getElementById('dashFechaG1').value=res.data.fechas.g1||''; }
-              renderizarDashboardGrid();
-            } else { alert("Error cargando dashboard: "+res.message); }
-          })
-          .withFailureHandler(function(err){ if (btn) btn.innerHTML="🔄 Actualizar Datos"; alert("Error de red: "+err); })
-          .obtenerDatosDashboard();
-      }
-    }
-
-    function formateaCelda(val) {
-      if (val===null||val===undefined||val==='') return '';
-      let numStr = val.toString();
-      if (numStr.indexOf('.')!==-1 && !isNaN(numStr)) { let parsed=parseFloat(numStr); return (parsed*100).toFixed(1).replace('.0','')+'%'; }
-      return val;
+    function formateaCelda(v) {
+      if(v===null||v===undefined||v==='') return '';
+      const s=v.toString();
+      if(s.includes('.')&&!isNaN(s)) return (parseFloat(s)*100).toFixed(1).replace('.0','')+'%';
+      return v;
     }
 
     function renderizarDashboardGrid() {
-      const grid = document.getElementById('dashboardGrid'); grid.innerHTML = '';
-      Object.keys(configTablas).forEach(function(tablaId) {
-        const conf = configTablas[tablaId];
-        const div  = document.createElement('div');
-        div.className = "bg-white rounded-xl shadow-md border border-slate-200 p-6 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group";
-        div.onclick = function(){ abrirDetalleDashboard(tablaId); };
-        let iconStr = conf.tipo==='pie' ? '🍩' : (conf.tipo==='line' ? '📈' : '📊');
-        div.innerHTML = '<div><div class="w-12 h-12 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-4 text-2xl shadow-sm">'+iconStr+'</div><h3 class="font-bold text-slate-800 text-lg leading-tight mb-2">'+conf.titulo+'</h3><p class="text-xs text-slate-500 mb-4">Haz clic para expandir la tabla detallada y visualizar la gráfica interactiva.</p></div><div class="text-indigo-600 font-bold text-sm flex items-center gap-1 group-hover:text-indigo-800 transition-colors">Ver Análisis <span class="text-lg transform group-hover:translate-x-1 transition-transform">→</span></div>';
-        grid.appendChild(div);
+      const grid=document.getElementById('dashboardGrid'); grid.innerHTML='';
+      // OPTIMIZACIÓN: DocumentFragment para tarjetas del dashboard
+      const frag=document.createDocumentFragment();
+      Object.entries(configTablas).forEach(([id,conf]) => {
+        const div=document.createElement('div');
+        div.className="bg-white rounded-xl shadow-md border border-slate-200 p-6 flex flex-col justify-between hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group";
+        div.onclick=()=>abrirDetalleDashboard(id);
+        const icon=conf.tipo==='pie'?'🍩':(conf.tipo==='line'?'📈':'📊');
+        div.innerHTML=`<div><div class="w-12 h-12 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-4 text-2xl shadow-sm">${icon}</div><h3 class="font-bold text-slate-800 text-lg leading-tight mb-2">${conf.titulo}</h3><p class="text-xs text-slate-500 mb-4">Haz clic para expandir la tabla detallada y visualizar la gráfica interactiva.</p></div><div class="text-indigo-600 font-bold text-sm flex items-center gap-1 group-hover:text-indigo-800 transition-colors">Ver Análisis <span class="text-lg transform group-hover:translate-x-1 transition-transform">→</span></div>`;
+        frag.appendChild(div);
       });
+      grid.appendChild(frag);
     }
 
     function abrirDetalleDashboard(tablaId) {
-      const conf    = configTablas[tablaId];
-      const rawData = datosDashboardGral[tablaId];
-      document.getElementById('dashModalTitulo').innerText = conf.titulo;
-      const thead = document.getElementById('dashModalTablaHead');
-      const tbody = document.getElementById('dashModalTablaBody');
-      thead.innerHTML = ''; tbody.innerHTML = '';
-      let labelsForChart = [], datasetsForChart = [];
-      if (conf.esColumnar) {
-        let headers = Object.keys(rawData);
-        let headTr  = document.createElement('tr');
-        headers.forEach(function(h){ let th=document.createElement('th'); th.className="px-4 py-3 font-bold uppercase tracking-wider text-xs"; th.innerText=h; headTr.appendChild(th); });
-        thead.appendChild(headTr);
-        let numRows = rawData[headers[0]].length;
-        for(let i=0; i<numRows; i++) { let tr=document.createElement('tr'); tr.className="hover:bg-slate-50 transition-colors"; headers.forEach(function(h){ let td=document.createElement('td'); td.className="px-4 py-2 text-slate-600 whitespace-nowrap"; td.innerText=formateaCelda(rawData[h][i]); tr.appendChild(td); }); tbody.appendChild(tr); }
-        labelsForChart = rawData[conf.colLabel].map(function(l){ return l.toString(); });
-        conf.colsData.forEach(function(colName, idx){ let color=idx===0?'#4f46e5':(idx===1?'#10b981':'#f59e0b'); datasetsForChart.push({ label:colName, data:rawData[colName].map(function(v){ return parseFloat(v)||0; }), backgroundColor:color, borderColor:color, borderWidth:1 }); });
+      const conf=configTablas[tablaId], raw=datosDashboardGral[tablaId];
+      document.getElementById('dashModalTitulo').innerText=conf.titulo;
+      const thead=document.getElementById('dashModalTablaHead'), tbody=document.getElementById('dashModalTablaBody');
+      thead.innerHTML=''; tbody.innerHTML='';
+      const fragH=document.createDocumentFragment(), fragB=document.createDocumentFragment();
+      let labelsChart=[], datasetsChart=[];
+
+      if(conf.esColumnar) {
+        const keys=Object.keys(raw);
+        const trH=document.createElement('tr');
+        keys.forEach(k=>{ const th=document.createElement('th'); th.className="px-4 py-3 font-bold uppercase tracking-wider text-xs"; th.innerText=k; trH.appendChild(th); });
+        fragH.appendChild(trH);
+        for(let i=0;i<raw[keys[0]].length;i++) {
+          const tr=document.createElement('tr'); tr.className="hover:bg-slate-50 transition-colors";
+          keys.forEach(k=>{ const td=document.createElement('td'); td.className="px-4 py-2 text-slate-600 whitespace-nowrap"; td.innerText=formateaCelda(raw[k][i]); tr.appendChild(td); });
+          fragB.appendChild(tr);
+        }
+        labelsChart=raw[conf.colLabel].map(l=>l.toString());
+        conf.colsData.forEach((cn,idx)=>{ const c=['#4f46e5','#10b981','#f59e0b'][idx]; datasetsChart.push({label:cn,data:raw[cn].map(v=>parseFloat(v)||0),backgroundColor:c,borderColor:c,borderWidth:1}); });
       } else {
-        let keys    = Object.keys(rawData);
-        let numVals = keys.length>0 ? rawData[keys[0]].length : 0;
-        let headTr  = document.createElement('tr');
-        let thCat   = document.createElement('th'); thCat.className="px-4 py-3 font-bold uppercase tracking-wider text-xs"; thCat.innerText="Categoría"; headTr.appendChild(thCat);
-        for(let i=0; i<numVals; i++){ let th=document.createElement('th'); th.className="px-4 py-3 font-bold uppercase tracking-wider text-xs"; th.innerText=numVals>1?("Valor "+(i+1)):"Total"; headTr.appendChild(th); }
-        thead.appendChild(headTr);
-        keys.forEach(function(k){ let tr=document.createElement('tr'); tr.className="hover:bg-slate-50 transition-colors"; let tdCat=document.createElement('td'); tdCat.className="px-4 py-2 font-semibold text-slate-700 whitespace-nowrap"; tdCat.innerText=k; tr.appendChild(tdCat); rawData[k].forEach(function(v){ let td=document.createElement('td'); td.className="px-4 py-2 text-slate-600"; td.innerText=formateaCelda(v); tr.appendChild(td); }); tbody.appendChild(tr); });
-        labelsForChart = keys;
-        datasetsForChart.push({ label:"Valor Principal", data:keys.map(function(k){ return parseFloat(rawData[k][0])||0; }), backgroundColor:'#4f46e5', borderColor:'#3730a3', borderWidth:1 });
-        if (numVals>1 && conf.tipo!=='pie') { datasetsForChart.push({ label:"Valor Secundario", data:keys.map(function(k){ return parseFloat(rawData[k][1])||0; }), backgroundColor:'#10b981', borderColor:'#047857', borderWidth:1 }); }
+        const keys=Object.keys(raw), nv=keys.length>0?raw[keys[0]].length:0;
+        const trH=document.createElement('tr');
+        const thC=document.createElement('th'); thC.className="px-4 py-3 font-bold uppercase tracking-wider text-xs"; thC.innerText="Categoría"; trH.appendChild(thC);
+        for(let i=0;i<nv;i++) { const th=document.createElement('th'); th.className="px-4 py-3 font-bold uppercase tracking-wider text-xs"; th.innerText=nv>1?"Valor "+(i+1):"Total"; trH.appendChild(th); }
+        fragH.appendChild(trH);
+        keys.forEach(k=>{ const tr=document.createElement('tr'); tr.className="hover:bg-slate-50 transition-colors"; const td0=document.createElement('td'); td0.className="px-4 py-2 font-semibold text-slate-700 whitespace-nowrap"; td0.innerText=k; tr.appendChild(td0); raw[k].forEach(v=>{ const td=document.createElement('td'); td.className="px-4 py-2 text-slate-600"; td.innerText=formateaCelda(v); tr.appendChild(td); }); fragB.appendChild(tr); });
+        labelsChart=keys; datasetsChart.push({label:"Valor Principal",data:keys.map(k=>parseFloat(raw[k][0])||0),backgroundColor:'#4f46e5',borderColor:'#3730a3',borderWidth:1});
+        if(nv>1&&conf.tipo!=='pie') datasetsChart.push({label:"Valor Secundario",data:keys.map(k=>parseFloat(raw[k][1])||0),backgroundColor:'#10b981',borderColor:'#047857',borderWidth:1});
       }
-      renderCanvasChart(conf.tipo, labelsForChart, datasetsForChart);
+      thead.appendChild(fragH); tbody.appendChild(fragB);
+      renderCanvasChart(conf.tipo, labelsChart, datasetsChart);
       document.getElementById('modalDetalleDashboard').classList.remove('hidden');
     }
 
     function renderCanvasChart(type, labels, datasets) {
-      if (chartInstance) { chartInstance.destroy(); }
-      const ctx = document.getElementById('dashModalCanvas').getContext('2d');
-      if (type==='pie') { const pieColors=['#4f46e5','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316','#64748b']; datasets[0].backgroundColor=pieColors.slice(0,labels.length); datasets[0].borderColor='#ffffff'; }
-      chartInstance = new Chart(ctx, {
-        type: type,
-        data: { labels:labels, datasets:datasets },
-        options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:type==='pie'?'right':'top' }, tooltip:{ callbacks:{ label:function(context){ let label=context.dataset.label||''; if(label) label+=': '; if(context.parsed.y!==null) label+=context.parsed.y; return label; } } } } }
-      });
+      if(chartInstance) chartInstance.destroy();
+      const ctx=document.getElementById('dashModalCanvas').getContext('2d');
+      if(type==='pie') { const pc=['#4f46e5','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#f97316','#64748b']; datasets[0].backgroundColor=pc.slice(0,labels.length); datasets[0].borderColor='#ffffff'; }
+      chartInstance=new Chart(ctx,{type,data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:type==='pie'?'right':'top'},tooltip:{callbacks:{label:ctx=>{ let l=ctx.dataset.label||''; if(l) l+=': '; if(ctx.parsed.y!=null) l+=ctx.parsed.y; return l; }}}}}});
     }
 
     function cerrarModalDashboard() { document.getElementById('modalDetalleDashboard').classList.add('hidden'); }
